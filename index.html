@@ -499,7 +499,7 @@
           <div class="stat-card">
             <div class="stat-label">Total Balance</div>
             <div class="stat-value" id="statBalance">৳0</div>
-            <div class="stat-sub">Across all accounts</div>
+            <div class="stat-sub" id="statBalanceSub">Across all accounts</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Income · This Month</div>
@@ -518,11 +518,13 @@
           </div>
         </div>
 
-        <!-- Account Balances Section -->
+        <!-- Account Selector -->
         <div class="section-heading">
-          <h3>Account Balances</h3>
+          <h3>Select Account</h3>
+          <select class="field-select" id="dashboardAccountSelect">
+            <option value="all">All Accounts</option>
+          </select>
         </div>
-        <div class="tile-grid" id="dashboardAccountGrid"></div>
 
         <div class="grid-2">
           <div class="card">
@@ -835,6 +837,11 @@
     renderDashboard();
   });
 
+  // Dashboard account selector change handler
+  document.getElementById("dashboardAccountSelect").addEventListener("change", ()=>{
+    renderDashboard();
+  });
+
   /* ================= Modal system ================= */
   const modalOverlay = document.getElementById("modalOverlay");
   const modalEl = document.getElementById("modal");
@@ -1026,6 +1033,7 @@
       closeModal();
       renderAccounts();
       populateTxFilterOptions();
+      renderDashboard();
     });
   }
 
@@ -1175,10 +1183,48 @@
   }
 
   function renderDashboard(){
-    document.getElementById("monthLabel").textContent = monthLabelFromKey(currentMonth);
-    const { txs, income, expense, incomeCount, expenseCount } = computeMonthTotals(currentMonth);
+    // Get selected account from dropdown
+    const selectedAccountId = document.getElementById("dashboardAccountSelect").value;
+    
+    // Populate account selector
+    const accountSelect = document.getElementById("dashboardAccountSelect");
+    accountSelect.innerHTML = '<option value="all">All Accounts</option>' + state.accounts.map(a => `<option value="${a.id}" ${a.id===selectedAccountId?"selected":""}>${escapeHtml(a.name)}</option>`).join("");
 
-    const totalBalance = state.accounts.reduce((s,a)=>s+computeAccountBalance(a.id), 0);
+    // Update balance subtitle based on selection
+    const balanceSubEl = document.getElementById("statBalanceSub");
+    if(selectedAccountId === "all"){
+      balanceSubEl.textContent = "Across all accounts";
+    } else {
+      const acc = findAccount(selectedAccountId);
+      balanceSubEl.textContent = acc ? "For " + escapeHtml(acc.name) : "";
+    }
+
+    document.getElementById("monthLabel").textContent = monthLabelFromKey(currentMonth);
+    
+    // Compute totals filtered by selected account
+    let income, expense, incomeCount, expenseCount;
+    if(selectedAccountId === "all"){
+      const { txs, income: inc, expense: exp, incomeCount: ic, expenseCount: ec } = computeMonthTotals(currentMonth);
+      income = inc;
+      expense = exp;
+      incomeCount = ic;
+      expenseCount = ec;
+    } else {
+      const allTxs = state.transactions.filter(t => monthKey(t.date) === currentMonth && t.accountId === selectedAccountId);
+      income = allTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+      expense = allTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+      incomeCount = allTxs.filter(t=>t.type==='income').length;
+      expenseCount = allTxs.filter(t=>t.type==='expense').length;
+    }
+
+    // Display balance for selected account only (or total if "all")
+    let totalBalance;
+    if(selectedAccountId === "all"){
+      totalBalance = state.accounts.reduce((s,a)=>s+computeAccountBalance(a.id), 0);
+    } else {
+      totalBalance = computeAccountBalance(selectedAccountId);
+    }
+    
     document.getElementById("statBalance").textContent = fmtMoney(totalBalance);
     document.getElementById("statIncome").textContent = fmtMoney(income);
     document.getElementById("statExpense").textContent = fmtMoney(expense);
@@ -1191,7 +1237,14 @@
 
     document.getElementById("chartSub").textContent = (chartType === 'expense' ? "Spending" : "Earning") + " by category · " + monthLabelFromKey(currentMonth);
 
-    const relevantTxs = txs.filter(t => t.type === chartType);
+    // Filter transactions by selected account for chart
+    let relevantTxs;
+    if(selectedAccountId === "all"){
+      relevantTxs = state.transactions.filter(t => monthKey(t.date) === currentMonth && t.type === chartType);
+    } else {
+      relevantTxs = state.transactions.filter(t => monthKey(t.date) === currentMonth && t.accountId === selectedAccountId && t.type === chartType);
+    }
+    
     const byCategory = {};
     relevantTxs.forEach(t=>{
       byCategory[t.categoryId] = (byCategory[t.categoryId]||0) + t.amount;
@@ -1203,37 +1256,20 @@
 
     drawPieChart(document.getElementById("pieChartArea"), chartData, chartType === 'expense' ? 'Spent' : 'Earned');
 
-    // Recent list (last 6 overall, most recent first)
-    const recent = [...state.transactions].sort((a,b)=> (b.date || "").localeCompare(a.date) || 0).slice(0,6);
+    // Recent list - filter by selected account if not "all"
+    let recent;
+    if(selectedAccountId === "all"){
+      recent = [...state.transactions].sort((a,b)=> (b.date || "").localeCompare(a.date) || 0).slice(0,6);
+    } else {
+      recent = state.transactions.filter(t => t.accountId === selectedAccountId).sort((a,b)=> (b.date || "").localeCompare(a.date) || 0).slice(0,6);
+    }
+    
     const recentList = document.getElementById("recentList");
     if(recent.length === 0){
       recentList.innerHTML = `<div class="empty">No records yet. Tap "Add Record" to start tracking.</div>`;
     } else {
       recentList.innerHTML = recent.map(t => transactionRowHtml(t)).join("");
       bindTxRowActions(recentList);
-    }
-
-    // Render account balances on dashboard
-    const dashboardAccountGrid = document.getElementById("dashboardAccountGrid");
-    if(state.accounts.length === 0){
-      dashboardAccountGrid.innerHTML = `<div class="empty">No accounts yet. Add your first one.</div>`;
-    } else {
-      dashboardAccountGrid.innerHTML = state.accounts.map(a => {
-        const bal = computeAccountBalance(a.id);
-        const count = state.transactions.filter(t=>t.accountId===a.id).length;
-        return `
-          <div class="tile" data-id="${a.id}">
-            <div class="tile-top">
-              <div class="tile-icon" style="background:var(--accent-soft);color:var(--accent);">${initials(a.name)}</div>
-              <div style="flex:1;min-width:0;">
-                <div class="tile-name">${escapeHtml(a.name)}</div>
-                <div class="tile-type">${count} record${count===1?"":"s"}</div>
-              </div>
-            </div>
-            <div class="tile-value ${bal<0?'expense':''}">${fmtMoney(bal)}</div>
-          </div>
-        `;
-      }).join("");
     }
   }
 
@@ -1416,6 +1452,8 @@
           state.accounts = state.accounts.filter(a=>a.id!==id);
           saveState();
           renderAccounts();
+          populateTxFilterOptions();
+          renderDashboard();
         });
       });
     });
