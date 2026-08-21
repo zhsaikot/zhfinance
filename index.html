@@ -515,6 +515,12 @@
           </div>
         </div>
 
+        <!-- Account Balances Section -->
+        <div class="section-heading">
+          <h3>Account Balances</h3>
+        </div>
+        <div class="tile-grid" id="dashboardAccountGrid"></div>
+
         <div class="grid-2">
           <div class="card">
             <div class="card-head">
@@ -1202,6 +1208,29 @@
     } else {
       recentList.innerHTML = recent.map(t => transactionRowHtml(t)).join("");
       bindTxRowActions(recentList);
+    }
+
+    // Render account balances on dashboard
+    const dashboardAccountGrid = document.getElementById("dashboardAccountGrid");
+    if(state.accounts.length === 0){
+      dashboardAccountGrid.innerHTML = `<div class="empty">No accounts yet. Add your first one.</div>`;
+    } else {
+      dashboardAccountGrid.innerHTML = state.accounts.map(a => {
+        const bal = computeAccountBalance(a.id);
+        const count = state.transactions.filter(t=>t.accountId===a.id).length;
+        return `
+          <div class="tile" data-id="${a.id}">
+            <div class="tile-top">
+              <div class="tile-icon" style="background:var(--accent-soft);color:var(--accent);">${initials(a.name)}</div>
+              <div style="flex:1;min-width:0;">
+                <div class="tile-name">${escapeHtml(a.name)}</div>
+                <div class="tile-type">${count} record${count===1?"":"s"}</div>
+              </div>
+            </div>
+            <div class="tile-value ${bal<0?'expense':''}">${fmtMoney(bal)}</div>
+          </div>
+        `;
+      }).join("");
     }
   }
 
