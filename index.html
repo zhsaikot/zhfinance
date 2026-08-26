@@ -655,6 +655,31 @@
           <div class="toast-note" id="profileToast"></div>
 
           <div class="danger-zone">
+            <p style="margin-bottom:14px;font-weight:700;color:var(--text);">Import & Export Data</p>
+            
+            <div class="form-group">
+              <label>Select Account</label>
+              <select class="full" id="importExportAccountSelect">
+                <option value="all">All Accounts</option>
+              </select>
+            </div>
+            
+            <div style="display:flex;gap:10px;margin-bottom:16px;">
+              <button class="btn btn-block" id="exportDataBtn" style="flex:1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:15px;height:15px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+              <button class="btn btn-block btn-accent" id="importDataBtn" style="flex:1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="width:15px;height:15px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import
+              </button>
+            </div>
+            
+            <input type="file" id="importFileInput" accept=".json" style="display:none" />
+            <div class="toast-note" id="importExportToast"></div>
+          </div>
+
+          <div class="danger-zone">
             <p>Erase every account, category, transaction and loan stored on this device. This cannot be undone.</p>
             <button class="btn btn-danger btn-block" id="resetAllBtn">Reset All Data</button>
           </div>
@@ -1571,6 +1596,7 @@
     const preview = document.getElementById("profileAvatarPreview");
     preview.innerHTML = state.profile.image ? `<img src="${state.profile.image}" alt="Profile photo" />` : initials(state.profile.name);
     document.getElementById("profileToast").textContent = "";
+    populateImportExportAccountSelect();
   }
 
   document.getElementById("uploadImageBtn").addEventListener("click", ()=>{
@@ -1598,6 +1624,224 @@
     updateSidebarProfile();
     document.getElementById("profileToast").textContent = "Profile saved.";
   });
+  
+  // Populate import/export account selector
+  function populateImportExportAccountSelect(selectedId){
+    const select = document.getElementById("importExportAccountSelect");
+    select.innerHTML = '<option value="all">All Accounts</option>' + 
+      state.accounts.map(a => `<option value="${a.id}" ${a.id===selectedId?"selected":""}>${escapeHtml(a.name)}</option>`).join("");
+  }
+  
+  // Export data functionality
+  document.getElementById("exportDataBtn").addEventListener("click", ()=>{
+    const accountId = document.getElementById("importExportAccountSelect").value;
+    let exportData;
+    
+    if(accountId === "all"){
+      // Export all data
+      exportData = {
+        profile: state.profile,
+        accounts: state.accounts,
+        categories: state.categories,
+        transactions: state.transactions,
+        loans: state.loans,
+        exportedAt: new Date().toISOString()
+      };
+    } else {
+      // Export only selected account data
+      const account = findAccount(accountId);
+      const accountTransactions = state.transactions.filter(t => t.accountId === accountId);
+      
+      // Get categories used by this account's transactions
+      const usedCategoryIds = [...new Set(accountTransactions.map(t => t.categoryId))];
+      const accountCategories = state.categories.filter(c => usedCategoryIds.includes(c.id));
+      
+      exportData = {
+        profile: state.profile,
+        accounts: [account],
+        categories: accountCategories,
+        transactions: accountTransactions,
+        loans: state.loans,
+        exportedAt: new Date().toISOString(),
+        exportType: "single_account"
+      };
+    }
+    
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const accountName = accountId === "all" ? "all_accounts" : (account?.name || "account");
+    a.download = `zhs_finance_${accountName}_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    document.getElementById("importExportToast").textContent = "Data exported successfully!";
+    setTimeout(() => {
+      document.getElementById("importExportToast").textContent = "";
+    }, 3000);
+  });
+  
+  // Import data functionality
+  document.getElementById("importDataBtn").addEventListener("click", ()=>{
+    document.getElementById("importFileInput").click();
+  });
+  
+  document.getElementById("importFileInput").addEventListener("change", (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (evt)=>{
+      try {
+        const importedData = JSON.parse(evt.target.result);
+        
+        // Validate the imported data structure
+        if(!importedData.accounts || !Array.isArray(importedData.accounts)){
+          throw new Error("Invalid data format: missing accounts array");
+        }
+        
+        // Determine what to import based on selection
+        const accountId = document.getElementById("importExportAccountSelect").value;
+        
+        if(accountId === "all"){
+          // Import all data - merge with existing
+          confirmDelete("This will merge imported data with your existing data. Continue?", ()=>{
+            // Merge accounts (avoid duplicates by name)
+            const existingAccountNames = new Set(state.accounts.map(a => a.name));
+            const newAccounts = importedData.accounts.filter(a => !existingAccountNames.has(a.name));
+            
+            // Create mapping of old account IDs to new ones
+            const accountMap = {};
+            newAccounts.forEach(acc => {
+              const newId = uid();
+              accountMap[acc.id] = newId;
+              acc.id = newId;
+              state.accounts.push(acc);
+            });
+            existingAccountNames.forEach(name => {
+              const existing = state.accounts.find(a => a.name === name);
+              importedData.accounts.filter(a => a.name === name).forEach(a => {
+                accountMap[a.id] = existing.id;
+              });
+            });
+            
+            // Merge categories (avoid duplicates by name and type)
+            const existingCategoryKeys = new Set(state.categories.map(c => `${c.name}|${c.type}`));
+            const newCategories = importedData.categories.filter(c => !existingCategoryKeys.has(`${c.name}|${c.type}`));
+            
+            const categoryMap = {};
+            newCategories.forEach(cat => {
+              const newId = uid();
+              categoryMap[cat.id] = newId;
+              cat.id = newId;
+              state.categories.push(cat);
+            });
+            importedData.categories.filter(c => existingCategoryKeys.has(`${c.name}|${c.type}`)).forEach(c => {
+              const existing = state.categories.find(x => x.name === c.name && x.type === c.type);
+              categoryMap[c.id] = existing.id;
+            });
+            
+            // Import transactions with mapped IDs
+            if(importedData.transactions && Array.isArray(importedData.transactions)){
+              importedData.transactions.forEach(tx => {
+                const newTx = {...tx};
+                newTx.id = uid();
+                newTx.accountId = accountMap[tx.accountId] || state.accounts.find(a => a.name === (findAccount(tx.accountId)?.name || ""))?.id;
+                newTx.categoryId = categoryMap[tx.categoryId] || state.categories.find(c => c.name === (findCategory(tx.categoryId)?.name || ""))?.id;
+                if(newTx.accountId && newTx.categoryId){
+                  state.transactions.push(newTx);
+                }
+              });
+            }
+            
+            // Import loans
+            if(importedData.loans && Array.isArray(importedData.loans)){
+              importedData.loans.forEach(loan => {
+                const newLoan = {...loan};
+                newLoan.id = uid();
+                state.loans.push(newLoan);
+              });
+            }
+            
+            saveState();
+            refreshCurrentView();
+            document.getElementById("importExportToast").textContent = "Data imported successfully!";
+            setTimeout(() => {
+              document.getElementById("importExportToast").textContent = "";
+            }, 3000);
+          });
+        } else {
+          // Import to specific account
+          const targetAccount = findAccount(accountId);
+          if(!targetAccount){
+            document.getElementById("importExportToast").textContent = "Selected account not found!";
+            return;
+          }
+          
+          confirmDelete(`This will import transactions to "${targetAccount.name}". Continue?`, ()=>{
+            // Find the matching account in imported data or use first one
+            let sourceAccount = importedData.accounts.find(a => a.id === accountId) || 
+                               importedData.accounts.find(a => a.name === targetAccount.name) ||
+                               importedData.accounts[0];
+            
+            if(!sourceAccount){
+              document.getElementById("importExportToast").textContent = "No matching account found in import file!";
+              return;
+            }
+            
+            // Filter transactions for this account
+            const transactionsToImport = (importedData.transactions || []).filter(tx => tx.accountId === sourceAccount.id);
+            
+            // Get or create categories
+            const categoryMap = {};
+            transactionsToImport.forEach(tx => {
+              const importedCat = importedData.categories?.find(c => c.id === tx.categoryId);
+              if(importedCat){
+                let existingCat = state.categories.find(c => c.name === importedCat.name && c.type === importedCat.type);
+                if(!existingCat){
+                  const newCat = {...importedCat, id: uid()};
+                  state.categories.push(newCat);
+                  existingCat = newCat;
+                }
+                categoryMap[tx.categoryId] = existingCat.id;
+              }
+            });
+            
+            // Import transactions
+            transactionsToImport.forEach(tx => {
+              const newTx = {
+                ...tx,
+                id: uid(),
+                accountId: accountId,
+                categoryId: categoryMap[tx.categoryId] || state.categories[0]?.id
+              };
+              state.transactions.push(newTx);
+            });
+            
+            saveState();
+            refreshCurrentView();
+            document.getElementById("importExportToast").textContent = `Imported ${transactionsToImport.length} transactions to "${targetAccount.name}"!`;
+            setTimeout(() => {
+              document.getElementById("importExportToast").textContent = "";
+            }, 3000);
+          });
+        }
+      } catch(err){
+        console.error("Import error:", err);
+        document.getElementById("importExportToast").textContent = "Error importing data: " + err.message;
+        setTimeout(() => {
+          document.getElementById("importExportToast").textContent = "";
+        }, 5000);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Reset file input
+  });
+  
   document.getElementById("resetAllBtn").addEventListener("click", ()=>{
     confirmDelete("Every account, category, transaction and loan on this device will be permanently erased. Your profile name and photo will be kept.", ()=>{
       const keptProfile = state.profile;
