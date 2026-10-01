@@ -2167,11 +2167,14 @@
 
   /* ================= Transaction & Transfer Modal ================= */
   function openTransactionModal(existing, defaultType = "expense"){
-    const isEdit = !!existing;
-    let type = existing ? existing.type : defaultType;
+    const isEdit = !!(existing && existing.id);
+    let type = (existing && existing.type) ? existing.type : defaultType;
 
     function renderModalBody(){
       const isTransfer = type === 'transfer';
+      const fromAccId = (existing && existing.fromAccountId) || (existing && existing.accountId) || state.accounts[0]?.id;
+      const toAccId = (existing && existing.toAccountId) || (state.accounts.find(a => a.id !== fromAccId)?.id || state.accounts[1]?.id || state.accounts[0]?.id);
+
       return `
         <div class="type-toggle">
           <button type="button" class="tx-type-btn ${type==='expense'?'active expense':''}" data-type="expense">Expense</button>
@@ -2182,19 +2185,19 @@
         <div class="form-group">
           <label>Amount (৳)</label>
           <div class="amount-input-wrap"><span>৳</span>
-            <input type="number" min="0.01" step="0.01" id="txAmount" placeholder="0.00" value="${existing ? existing.amount : ''}" required autofocus />
+            <input type="number" min="0.01" step="0.01" id="txAmount" placeholder="0.00" value="${existing && existing.amount ? existing.amount : ''}" required autofocus />
           </div>
         </div>
 
         ${isTransfer ? `
           <div class="form-row">
             <div class="form-group">
-              <label>From Account (প্রেরক)</label>
-              <select class="full" id="txFromAccount">${accountOptions(existing ? existing.fromAccountId : state.accounts[0]?.id)}</select>
+              <label>From Account (প্রেরক - টাকা কমবে 📤)</label>
+              <select class="full" id="txFromAccount">${accountOptions(fromAccId)}</select>
             </div>
             <div class="form-group">
-              <label>To Account (প্রাপক)</label>
-              <select class="full" id="txToAccount">${accountOptions(existing ? existing.toAccountId : (state.accounts[1]?.id || state.accounts[0]?.id))}</select>
+              <label>To Account (প্রাপক - টাকা বাড়বে 📥)</label>
+              <select class="full" id="txToAccount">${accountOptions(toAccId)}</select>
             </div>
           </div>
         ` : `
@@ -2212,40 +2215,73 @@
 
         <div class="form-group">
           <label>Date</label>
-          <input type="date" id="txDate" value="${existing ? existing.date : todayISO()}" required />
+          <input type="date" id="txDate" value="${existing && existing.date ? existing.date : todayISO()}" required />
         </div>
 
         <div class="form-group">
           <label>Note / Description (ঐচ্ছিক)</label>
-          <input type="text" id="txNote" placeholder="e.g. Office Transport, Gift, Lunch" value="${existing ? escapeHtml(existing.note||'') : ''}" />
+          <input type="text" id="txNote" placeholder="e.g. Office Transport, Gift, Lunch" value="${existing && existing.note ? escapeHtml(existing.note) : ''}" />
         </div>
       `;
     }
 
     openModal(`
       <div class="modal-head">
-        <h3>${isEdit ? (existing.type === 'transfer' ? "Edit Transfer" : "Edit Record") : (type === 'transfer' ? "Account to Account Transfer" : "Add Record")}</h3>
+        <h3 id="modalTitleText">${isEdit ? (existing.type === 'transfer' ? "Edit Transfer" : "Edit Record") : (type === 'transfer' ? "Account to Account Transfer" : "Add Record")}</h3>
         <button class="modal-close" data-close>&times;</button>
       </div>
       <form id="txForm">
         <div id="txFormFields">${renderModalBody()}</div>
         <div class="modal-actions">
           <button type="button" class="btn" data-close>Cancel</button>
-          <button type="submit" class="btn ${type==='transfer'?'btn-transfer':'btn-accent'}">${isEdit ? "Save Changes" : (type==='transfer'?"Complete Transfer":"Add Record")}</button>
+          <button type="submit" class="btn ${type==='transfer'?'btn-transfer':'btn-accent'}" id="txSubmitBtn">${isEdit ? "Save Changes" : (type==='transfer'?"Complete Transfer":"Add Record")}</button>
         </div>
       </form>
     `);
 
+    function bindTransferAccountSync(){
+      const fromSel = modalEl.querySelector("#txFromAccount");
+      const toSel = modalEl.querySelector("#txToAccount");
+      if(!fromSel || !toSel) return;
+      fromSel.addEventListener("change", () => {
+        if(fromSel.value === toSel.value){
+          const alt = state.accounts.find(a => a.id !== fromSel.value);
+          if(alt) toSel.value = alt.id;
+        }
+      });
+      toSel.addEventListener("change", () => {
+        if(toSel.value === fromSel.value){
+          const alt = state.accounts.find(a => a.id !== toSel.value);
+          if(alt) fromSel.value = alt.id;
+        }
+      });
+    }
+
     function bindTypeSwitch(){
       modalEl.querySelectorAll(".tx-type-btn").forEach(b => {
         b.addEventListener("click", () => {
+          if(b.dataset.type === 'transfer' && state.accounts.length < 2){
+            alert("You need at least 2 accounts to make a transfer. / ট্রান্সফার করার জন্য কমপক্ষে ২টি অ্যাকাউন্ট প্রয়োজন।");
+            return;
+          }
           type = b.dataset.type;
           modalEl.querySelector("#txFormFields").innerHTML = renderModalBody();
+          const titleEl = modalEl.querySelector("#modalTitleText");
+          const submitBtn = modalEl.querySelector("#txSubmitBtn");
+          if(titleEl){
+            titleEl.textContent = isEdit ? (type === 'transfer' ? "Edit Transfer" : "Edit Record") : (type === 'transfer' ? "Account to Account Transfer" : "Add Record");
+          }
+          if(submitBtn){
+            submitBtn.className = `btn ${type==='transfer'?'btn-transfer':'btn-accent'}`;
+            submitBtn.textContent = isEdit ? "Save Changes" : (type==='transfer' ? "Complete Transfer" : "Add Record");
+          }
           bindTypeSwitch();
+          bindTransferAccountSync();
         });
       });
     }
     bindTypeSwitch();
+    bindTransferAccountSync();
 
     modalEl.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeModal));
 
@@ -2257,14 +2293,19 @@
       const note = modalEl.querySelector("#txNote").value.trim();
 
       if(type === 'transfer'){
+        if(state.accounts.length < 2){
+          alert("You need at least 2 accounts to make a transfer.");
+          return;
+        }
         const fromAccountId = modalEl.querySelector("#txFromAccount").value;
         const toAccountId = modalEl.querySelector("#txToAccount").value;
-        if(fromAccountId === toAccountId){
-          alert("From Account and To Account must be different!");
+        if(!fromAccountId || !toAccountId || fromAccountId === toAccountId){
+          alert("From Account and To Account must be different! / প্রেরক এবং প্রাপক অ্যাকাউন্ট আলাদা হতে হবে।");
           return;
         }
         if(isEdit){
-          Object.assign(existing, { type: 'transfer', amount, fromAccountId, toAccountId, date, note, accountId: fromAccountId });
+          Object.assign(existing, { type: 'transfer', amount, fromAccountId, toAccountId, accountId: fromAccountId, date, note });
+          delete existing.categoryId;
         } else {
           state.transactions.push({ id: uid(), type: 'transfer', amount, fromAccountId, toAccountId, accountId: fromAccountId, date, note });
         }
@@ -2275,7 +2316,9 @@
         if(!accountId){ alert("Please add an account first."); return; }
 
         if(isEdit){
-          Object.assign(existing, { type, amount, categoryId, accountId, date, note, fromAccountId: undefined, toAccountId: undefined });
+          Object.assign(existing, { type, amount, categoryId, accountId, date, note });
+          delete existing.fromAccountId;
+          delete existing.toAccountId;
         } else {
           state.transactions.push({ id: uid(), type, amount, categoryId, accountId, date, note });
         }
@@ -2290,12 +2333,15 @@
   function openTransferModal(fromId = null, toId = null){
     const accounts = state.accounts;
     if(accounts.length < 2){
-      alert("You need at least 2 accounts to make a transfer. Please add another account first.");
+      alert("You need at least 2 accounts to make a transfer. Please add another account first. / ট্রান্সফার করার জন্য কমপক্ষে ২টি অ্যাকাউন্ট থাকতে হবে।");
       goToView("accounts");
       return;
     }
     const defaultFrom = fromId || accounts[0]?.id;
-    const defaultTo = toId || (accounts.find(a => a.id !== defaultFrom)?.id || accounts[1]?.id);
+    let defaultTo = toId;
+    if(!defaultTo || defaultTo === defaultFrom){
+      defaultTo = accounts.find(a => a.id !== defaultFrom)?.id || accounts[1]?.id;
+    }
 
     openTransactionModal({
       id: null,
@@ -2310,7 +2356,12 @@
 
   document.getElementById("quickTransferBtn").addEventListener("click", () => openTransferModal());
   document.getElementById("dashTransferBtn").addEventListener("click", () => openTransferModal());
-  document.getElementById("executeQuickTransferBtn").addEventListener("click", () => openTransferModal());
+  document.getElementById("executeQuickTransferBtn").addEventListener("click", () => {
+    const activeTarget = document.querySelector("#quickTransferTargets .target-pill.active");
+    const toId = activeTarget ? activeTarget.dataset.accId : null;
+    const fromId = toId ? (state.accounts.find(a => a.id !== toId)?.id || null) : null;
+    openTransferModal(fromId, toId);
+  });
   document.getElementById("accountsViewTransferBtn").addEventListener("click", () => openTransferModal());
 
   document.getElementById("quickAddBtn").addEventListener("click", () => openTransactionModal(null, "expense"));
