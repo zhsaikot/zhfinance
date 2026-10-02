@@ -933,15 +933,46 @@
   .legend-pct { color: var(--text-faint); font-size: 12px; width: 38px; text-align: right; }
   .legend-amt { color: var(--text-dim); font-size: 13px; font-weight: 600; width: 95px; text-align: right; }
 
-  /* 6-Month Income vs Expense Wave Chart (Image 1 & 3 Inspired) */
-  .trend-chart-card { margin-bottom: 24px; }
-  .trend-svg-wrap {
-    width: 100%;
-    height: 190px;
+  /* 6-Month Income vs Expense Wave Chart */
+  .trend-chart-card {
+    margin-bottom: 24px;
+    padding: 22px 24px 20px;
     position: relative;
     overflow: hidden;
   }
-  .trend-svg { width: 100%; height: 100%; }
+  .trend-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .trend-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-dim);
+  }
+  .legend-badge-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .legend-badge-dot.income { background: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.45); }
+  .legend-badge-dot.expense { background: #F43F5E; box-shadow: 0 0 8px rgba(244, 63, 94, 0.45); }
+  .trend-svg-wrap {
+    width: 100%;
+    height: 230px;
+    position: relative;
+    overflow: visible;
+  }
+  .trend-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
 
   /* 3D Budget Planner Progress Bars */
   .budget-list { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
@@ -1407,6 +1438,9 @@
     .stat-grid { grid-template-columns: 1fr; }
     .wallet-grid { grid-template-columns: 1fr; }
     .modal { padding: 20px; }
+    .trend-chart-card { padding: 16px 14px 14px; }
+    .trend-svg-wrap { height: 210px; }
+    .trend-legend { gap: 10px; font-size: 11.5px; }
   }
 </style>
 </head>
@@ -1635,16 +1669,16 @@
           </div>
         </div>
 
-        <!-- 6-Month Income vs Expense Wave Trend Chart (Cashly & Image 3 inspired) -->
+        <!-- 6-Month Income vs Expense Wave Trend Chart -->
         <div class="card card-3d trend-chart-card">
           <div class="card-head">
             <div>
               <div class="card-title">Cash Flow & Trend (আয়-ব্যয়ের ৬ মাসের ট্রেন্ড)</div>
               <div class="card-sub">Interactive 6-Month Cash Flow Overview · Hover points to view exact savings</div>
             </div>
-            <div style="display:flex;align-items:center;gap:14px;font-size:12.5px;">
-              <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--income);display:inline-block;"></span> Income</span>
-              <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--expense);display:inline-block;"></span> Expense</span>
+            <div class="trend-legend">
+              <span class="trend-legend-item"><span class="legend-badge-dot income"></span> Income</span>
+              <span class="trend-legend-item"><span class="legend-badge-dot expense"></span> Expense</span>
             </div>
           </div>
           <div class="trend-svg-wrap" id="trendChartWrap">
@@ -2335,6 +2369,12 @@
       if(iconRetract) iconRetract.style.display = "block";
       if(iconExpand) iconExpand.style.display = "none";
     }
+
+    // Re-render trend chart after sidebar animation to adapt to new container width
+    setTimeout(() => {
+      const active = document.querySelector(".view.active");
+      if(active && active.id === "view-dashboard") renderTrendChart();
+    }, 280);
   }
 
   function toggleSidebarCollapse(){
@@ -3091,116 +3131,232 @@
     const container = document.getElementById("trendChartWrap");
     if(!container) return;
 
+    // Use actual rendered pixel dimensions of the container
+    const rect = container.getBoundingClientRect();
+    const width = Math.round(rect.width) || container.clientWidth || 800;
+    const height = Math.round(rect.height) || container.clientHeight || 230;
+    const isMobile = width < 560;
+
     // Get last 6 months list
     const [curY, curM] = currentMonth.split("-").map(Number);
     const months = [];
+    const selectedAccountId = document.getElementById("dashboardAccountSelect")?.value || "all";
+
     for(let i = 5; i >= 0; i--){
       const d = new Date(curY, curM - 1 - i, 1);
       const key = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
-      const label = d.toLocaleString('en-US', { month:'short' });
-      const { income, expense } = computeMonthTotals(key, "all");
-      months.push({ key, label, income, expense, net: income - expense });
+      const label = d.toLocaleString('en-US', { month: isMobile ? 'narrow' : 'short' });
+      const fullLabel = d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+      const { income, expense } = computeMonthTotals(key, selectedAccountId);
+      months.push({ key, label, fullLabel, income, expense, net: income - expense });
     }
 
-    const maxVal = Math.max(...months.map(m => Math.max(m.income, m.expense)), 1000);
-    const width = 760;
-    const height = 180;
-    const padL = 40, padR = 20, padT = 20, padB = 30;
-    const chartW = width - padL - padR;
-    const chartH = height - padT - padB;
+    const rawMax = Math.max(...months.map(m => Math.max(m.income, m.expense)), 0);
+    // Add 18% headroom so peak values don't touch the top border
+    const maxVal = rawMax > 0 ? Math.ceil((rawMax * 1.18) / 1000) * 1000 : 10000;
+    const midVal = Math.round(maxVal / 2);
+
+    const padL = isMobile ? 42 : 56;
+    const padR = isMobile ? 18 : 26;
+    const padT = 24;
+    const padB = 34;
+
+    const chartW = Math.max(width - padL - padR, 100);
+    const chartH = Math.max(height - padT - padB, 80);
+    const floorY = padT + chartH;
 
     const stepX = chartW / (months.length - 1);
 
     function getY(val){
-      return padT + chartH - (val / maxVal) * chartH;
+      return padT + chartH - (Math.max(0, val) / maxVal) * chartH;
+    }
+
+    function formatAxisVal(val){
+      if(val >= 1000000) return (val/1000000).toFixed(1) + 'M';
+      if(val >= 1000) return Math.round(val/1000) + 'k';
+      return String(val);
     }
 
     const incomePoints = months.map((m, i) => ({ x: padL + i * stepX, y: getY(m.income) }));
     const expensePoints = months.map((m, i) => ({ x: padL + i * stepX, y: getY(m.expense) }));
 
-    function makeBezierPath(points){
-      if(points.length === 0) return "";
-      let d = `M ${points[0].x},${points[0].y}`;
+    function makeSmoothPath(points){
+      if(!points.length) return "";
+      if(points.length === 1) return `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
+      let path = `M ${points[0].x.toFixed(1)},${points[0].y.toFixed(1)}`;
       for(let i = 0; i < points.length - 1; i++){
         const p0 = points[i];
         const p1 = points[i+1];
-        const cx1 = p0.x + (p1.x - p0.x) / 2;
-        const cy1 = p0.y;
-        const cx2 = p0.x + (p1.x - p0.x) / 2;
-        const cy2 = p1.y;
-        d += ` C ${cx1},${cy1} ${cx2},${cy2} ${p1.x},${p1.y}`;
+        const cpx1 = p0.x + (p1.x - p0.x) * 0.45;
+        const cpy1 = p0.y;
+        const cpx2 = p1.x - (p1.x - p0.x) * 0.45;
+        const cpy2 = p1.y;
+        path += ` C ${cpx1.toFixed(1)},${cpy1.toFixed(1)} ${cpx2.toFixed(1)},${cpy2.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
       }
-      return d;
+      return path;
     }
 
-    const incLine = makeBezierPath(incomePoints);
-    const expLine = makeBezierPath(expensePoints);
+    const incLine = makeSmoothPath(incomePoints);
+    const expLine = makeSmoothPath(expensePoints);
 
-    const incArea = `${incLine} L ${incomePoints[incomePoints.length-1].x},${padT + chartH} L ${incomePoints[0].x},${padT + chartH} Z`;
-    const expArea = `${expLine} L ${expensePoints[expensePoints.length-1].x},${padT + chartH} L ${expensePoints[0].x},${padT + chartH} Z`;
+    const incArea = `${incLine} L ${incomePoints[incomePoints.length-1].x.toFixed(1)},${floorY} L ${incomePoints[0].x.toFixed(1)},${floorY} Z`;
+    const expArea = `${expLine} L ${expensePoints[expensePoints.length-1].x.toFixed(1)},${floorY} L ${expensePoints[0].x.toFixed(1)},${floorY} Z`;
 
-    const dots = months.map((m, i) => `
-      <g class="trend-col-hover" data-idx="${i}" style="cursor:pointer;">
-        <!-- Transparent hover bar -->
-        <rect x="${incomePoints[i].x - stepX/2}" y="${padT}" width="${stepX}" height="${chartH}" fill="transparent"></rect>
-        <circle cx="${incomePoints[i].x}" cy="${incomePoints[i].y}" r="4.5" fill="#10B981" stroke="#FFFFFF" stroke-width="2"></circle>
-        <circle cx="${expensePoints[i].x}" cy="${expensePoints[i].y}" r="4.5" fill="#F43F5E" stroke="#FFFFFF" stroke-width="2"></circle>
-        <text x="${incomePoints[i].x}" y="${height - 8}" text-anchor="middle" fill="var(--text-faint)" font-size="11" font-weight="600">${m.label}</text>
-      </g>
-    `).join("");
+    const cols = months.map((m, i) => {
+      const isCur = m.key === currentMonth;
+      const x = incomePoints[i].x;
+      const incY = incomePoints[i].y;
+      const expY = expensePoints[i].y;
+      const hasData = m.income > 0 || m.expense > 0;
+
+      let dotsHtml = "";
+      if(!hasData){
+        dotsHtml = `
+          <circle cx="${x.toFixed(1)}" cy="${floorY.toFixed(1)}" r="3.5" fill="var(--text-faint)" opacity="0.4"></circle>
+        `;
+      } else if(Math.abs(incY - expY) < 4){
+        dotsHtml = `
+          <circle class="trend-point" cx="${x.toFixed(1)}" cy="${incY.toFixed(1)}" r="5.5" fill="#10B981" stroke="#FFFFFF" stroke-width="2"></circle>
+          <circle class="trend-point" cx="${x.toFixed(1)}" cy="${expY.toFixed(1)}" r="3" fill="#F43F5E"></circle>
+        `;
+      } else {
+        dotsHtml = `
+          <circle class="trend-point income-pt" cx="${x.toFixed(1)}" cy="${incY.toFixed(1)}" r="${isCur ? 5.5 : 4.5}" fill="#10B981" stroke="#FFFFFF" stroke-width="${isCur ? 2.5 : 2}"></circle>
+          <circle class="trend-point expense-pt" cx="${x.toFixed(1)}" cy="${expY.toFixed(1)}" r="${isCur ? 5.5 : 4.5}" fill="#F43F5E" stroke="#FFFFFF" stroke-width="${isCur ? 2.5 : 2}"></circle>
+        `;
+      }
+
+      const activeBadge = isCur ? `
+        <rect x="${(x - 24).toFixed(1)}" y="${(floorY + 7).toFixed(1)}" width="48" height="20" rx="10" fill="var(--accent-soft)" stroke="var(--border-active)" stroke-width="1"></rect>
+      ` : '';
+
+      return `
+        <g class="trend-col-hover" data-idx="${i}" style="cursor:pointer;">
+          <!-- Transparent hover zone -->
+          <rect x="${(x - stepX/2).toFixed(1)}" y="${padT}" width="${stepX.toFixed(1)}" height="${chartH + 26}" fill="transparent"></rect>
+          
+          <!-- Hover guide line -->
+          <line class="trend-guide-line" x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${floorY}" stroke="var(--accent)" stroke-dasharray="3 3" stroke-width="1.5" opacity="0"></line>
+
+          <!-- Current month pill background -->
+          ${activeBadge}
+
+          <!-- Points -->
+          ${dotsHtml}
+
+          <!-- Month Label -->
+          <text x="${x.toFixed(1)}" y="${(floorY + 21).toFixed(1)}" text-anchor="middle" fill="${isCur ? 'var(--accent)' : 'var(--text-faint)'}" font-size="${isMobile ? 11 : 12}" font-weight="${isCur ? '800' : '600'}" font-family="var(--font-sans)">${m.label}</text>
+        </g>
+      `;
+    }).join("");
 
     container.innerHTML = `
-      <svg class="trend-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+      <svg class="trend-svg" viewBox="0 0 ${width} ${height}">
         <defs>
           <linearGradient id="gradIncome" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#10B981" stop-opacity="0.32" />
-            <stop offset="100%" stop-color="#10B981" stop-opacity="0" />
+            <stop offset="100%" stop-color="#10B981" stop-opacity="0.0" />
           </linearGradient>
           <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#F43F5E" stop-opacity="0.25" />
-            <stop offset="100%" stop-color="#F43F5E" stop-opacity="0" />
+            <stop offset="0%" stop-color="#F43F5E" stop-opacity="0.22" />
+            <stop offset="100%" stop-color="#F43F5E" stop-opacity="0.0" />
           </linearGradient>
         </defs>
 
-        <!-- Horizontal Guide Lines -->
-        <line x1="${padL}" y1="${getY(maxVal)}" x2="${width - padR}" y2="${getY(maxVal)}" stroke="var(--border-glass)" stroke-dasharray="4 4" />
-        <line x1="${padL}" y1="${getY(maxVal/2)}" x2="${width - padR}" y2="${getY(maxVal/2)}" stroke="var(--border-glass)" stroke-dasharray="4 4" />
-        <line x1="${padL}" y1="${padT + chartH}" x2="${width - padR}" y2="${padT + chartH}" stroke="var(--border-glass)" />
+        <!-- Horizontal Grid Lines & Y-Axis Scale Values -->
+        <g class="trend-grid">
+          <!-- Top Gridline -->
+          <line x1="${padL}" y1="${getY(maxVal).toFixed(1)}" x2="${(width - padR).toFixed(1)}" y2="${getY(maxVal).toFixed(1)}" stroke="var(--border-glass)" stroke-dasharray="4 4" stroke-width="1" />
+          <text x="${(padL - 10).toFixed(1)}" y="${(getY(maxVal) + 4).toFixed(1)}" text-anchor="end" fill="var(--text-faint)" font-size="10.5" font-weight="600" font-family="var(--font-sans)">৳${formatAxisVal(maxVal)}</text>
 
-        <!-- Area Fills -->
+          <!-- Mid Gridline -->
+          <line x1="${padL}" y1="${getY(midVal).toFixed(1)}" x2="${(width - padR).toFixed(1)}" y2="${getY(midVal).toFixed(1)}" stroke="var(--border-glass)" stroke-dasharray="4 4" stroke-width="1" />
+          <text x="${(padL - 10).toFixed(1)}" y="${(getY(midVal) + 4).toFixed(1)}" text-anchor="end" fill="var(--text-faint)" font-size="10.5" font-weight="600" font-family="var(--font-sans)">৳${formatAxisVal(midVal)}</text>
+
+          <!-- Baseline -->
+          <line x1="${padL}" y1="${floorY.toFixed(1)}" x2="${(width - padR).toFixed(1)}" y2="${floorY.toFixed(1)}" stroke="var(--border-glass)" stroke-width="1.2" />
+          <text x="${(padL - 10).toFixed(1)}" y="${(floorY + 4).toFixed(1)}" text-anchor="end" fill="var(--text-faint)" font-size="10.5" font-weight="600" font-family="var(--font-sans)">৳0</text>
+        </g>
+
+        <!-- Area Gradients -->
         <path d="${incArea}" fill="url(#gradIncome)"></path>
         <path d="${expArea}" fill="url(#gradExpense)"></path>
 
-        <!-- Lines -->
-        <path d="${incLine}" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round"></path>
-        <path d="${expLine}" fill="none" stroke="#F43F5E" stroke-width="3" stroke-linecap="round"></path>
+        <!-- Curve Lines -->
+        <path d="${incLine}" fill="none" stroke="#10B981" stroke-width="2.8" stroke-linecap="round"></path>
+        <path d="${expLine}" fill="none" stroke="#F43F5E" stroke-width="2.8" stroke-linecap="round"></path>
 
-        <!-- Interactive Points -->
-        ${dots}
+        <!-- Interactive Columns -->
+        ${cols}
       </svg>
     `;
 
-    // Interactive Hover
+    // Interactive Hover & Touch
     container.querySelectorAll(".trend-col-hover").forEach(col => {
-      col.addEventListener("mouseenter", (e) => {
-        const m = months[col.dataset.idx];
+      const idx = col.dataset.idx;
+      const m = months[idx];
+
+      function showTooltip(clientX, clientY){
+        const guide = col.querySelector(".trend-guide-line");
+        if(guide) guide.setAttribute("opacity", "0.8");
+        col.querySelectorAll(".trend-point").forEach(c => c.setAttribute("r", "6.5"));
+
         tooltip3D.style.display = "block";
         tooltip3D.innerHTML = `
-          <div style="font-weight:700;margin-bottom:4px;">${monthLabelFromKey(m.key)}</div>
-          <div style="color:var(--income);">Income: <b>${fmtMoney(m.income)}</b></div>
-          <div style="color:var(--expense);">Expense: <b>${fmtMoney(m.expense)}</b></div>
-          <div style="color:${m.net>=0?'var(--income)':'var(--expense)'};margin-top:2px;">Net Savings: <b>${fmtMoney(m.net)}</b></div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;border-bottom:1px solid var(--border-glass);padding-bottom:4px;">
+            ${escapeHtml(m.fullLabel)}
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:14px;color:var(--income);font-size:12px;margin-bottom:3px;">
+            <span>Income:</span> <b>${fmtMoney(m.income)}</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:14px;color:var(--expense);font-size:12px;margin-bottom:3px;">
+            <span>Expense:</span> <b>${fmtMoney(m.expense)}</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:14px;color:${m.net>=0?'var(--income)':'var(--expense)'};font-size:12px;font-weight:700;margin-top:4px;padding-top:4px;border-top:1px solid var(--border-glass);">
+            <span>Net Savings:</span> <b>${m.net >= 0 ? '+' : ''}${fmtMoney(m.net)}</b>
+          </div>
+          <div style="font-size:10.5px;color:var(--text-faint);margin-top:4px;text-align:right;">
+            Click to view month →
+          </div>
         `;
-      });
-      col.addEventListener("mousemove", (e) => {
-        tooltip3D.style.left = e.clientX + "px";
-        tooltip3D.style.top = (e.clientY - 20) + "px";
-      });
-      col.addEventListener("mouseleave", () => {
+
+        const ttWidth = 190;
+        let left = clientX + 14;
+        if(left + ttWidth > window.innerWidth - 10){
+          left = clientX - ttWidth - 14;
+        }
+        tooltip3D.style.left = left + "px";
+        tooltip3D.style.top = (clientY - 30) + "px";
+      }
+
+      function hideTooltip(){
+        const guide = col.querySelector(".trend-guide-line");
+        if(guide) guide.setAttribute("opacity", "0");
+        col.querySelectorAll(".trend-point").forEach(c => c.setAttribute("r", "4.5"));
         tooltip3D.style.display = "none";
+      }
+
+      col.addEventListener("mouseenter", (e) => showTooltip(e.clientX, e.clientY));
+      col.addEventListener("mousemove", (e) => {
+        const ttWidth = 190;
+        let left = e.clientX + 14;
+        if(left + ttWidth > window.innerWidth - 10){
+          left = e.clientX - ttWidth - 14;
+        }
+        tooltip3D.style.left = left + "px";
+        tooltip3D.style.top = (e.clientY - 30) + "px";
       });
+      col.addEventListener("mouseleave", hideTooltip);
+
+      // Mobile Touch Support
+      col.addEventListener("touchstart", (e) => {
+        const touch = e.touches[0];
+        showTooltip(touch.clientX, touch.clientY);
+        setTimeout(hideTooltip, 4000);
+      }, { passive: true });
+
       col.addEventListener("click", () => {
-        currentMonth = months[col.dataset.idx].key;
+        currentMonth = m.key;
         renderDashboard();
       });
     });
@@ -4270,6 +4426,22 @@
     if(name === "profile") renderProfile();
     updateSidebarProfile();
     setTimeout(bind3DTilt, 60);
+  }
+
+  // Auto-resize observer on trend chart to prevent any stretching on layout shifts
+  if(window.ResizeObserver){
+    let trendResizeTimer = null;
+    const trendWrapEl = document.getElementById("trendChartWrap");
+    if(trendWrapEl){
+      const ro = new ResizeObserver(() => {
+        clearTimeout(trendResizeTimer);
+        trendResizeTimer = setTimeout(() => {
+          const active = document.querySelector(".view.active");
+          if(active && active.id === "view-dashboard") renderTrendChart();
+        }, 60);
+      });
+      ro.observe(trendWrapEl);
+    }
   }
 
   window.addEventListener("resize", ()=>{
