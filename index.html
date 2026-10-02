@@ -350,19 +350,116 @@
   .avatar {
     width: 38px;
     height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    aspect-ratio: 1 / 1;
     border-radius: 50%;
-    flex: 0 0 38px;
+    flex-shrink: 0;
     background: var(--accent-soft);
     color: var(--accent);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 15px;
     font-weight: 700;
     overflow: hidden;
     border: 1.5px solid var(--accent-soft-2);
+    position: relative;
+    user-select: none;
+    box-sizing: border-box;
   }
-  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar img {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    border-radius: 50%;
+  }
+  .avatar-lg {
+    width: 76px;
+    height: 76px;
+    min-width: 76px;
+    min-height: 76px;
+    flex: 0 0 76px;
+    font-size: 26px;
+    border: 2.5px solid var(--accent);
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.25);
+  }
+  .avatar-preview-wrapper {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+  .avatar-edit-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 2.5px solid var(--bg-card);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease;
+    pointer-events: none;
+  }
+  .avatar-preview-wrapper:hover .avatar-edit-badge {
+    transform: scale(1.12);
+    background: var(--accent-hover, #4338CA);
+  }
+  .avatar-preview-wrapper:hover .avatar-lg {
+    filter: brightness(1.05);
+    border-color: #60A5FA;
+  }
+  .avatar-upload-box {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-md);
+  }
+  .avatar-upload-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .avatar-upload-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .avatar-upload-btns {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .avatar-upload-hint {
+    font-size: 11.5px;
+    color: var(--text-faint);
+  }
+  @media (max-width: 480px) {
+    .avatar-upload-box {
+      flex-direction: column;
+      text-align: center;
+      gap: 14px;
+    }
+    .avatar-upload-actions {
+      align-items: center;
+    }
+  }
   .sidebar-profile-name { font-size: 14px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sidebar-profile-sub { font-size: 11.5px; color: var(--text-faint); }
 
@@ -1903,12 +2000,24 @@
         <div class="card profile-form" style="max-width:540px;">
           <div class="card-title" style="margin-bottom:18px;">Profile & Preferences</div>
           
-          <div class="avatar-upload" style="display:flex;align-items:center;gap:18px;margin-bottom:20px;">
-            <div class="avatar" id="profileAvatarPreview" style="width:68px;height:68px;font-size:24px;">Z</div>
-            <div>
-              <input type="file" id="profileImageInput" accept="image/*" style="display:none" />
-              <button class="btn btn-sm" id="uploadImageBtn">Upload Photo</button>
-              <button class="btn btn-sm btn-ghost btn-danger" id="removeImageBtn">Remove</button>
+          <div class="avatar-upload-box">
+            <div class="avatar-preview-wrapper" id="avatarPreviewWrapper" title="Click to upload profile photo">
+              <div class="avatar avatar-lg" id="profileAvatarPreview">Z</div>
+              <div class="avatar-edit-badge" title="Change photo">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
+            </div>
+            <div class="avatar-upload-actions">
+              <div class="avatar-upload-title">Profile Photo</div>
+              <div class="avatar-upload-btns">
+                <input type="file" id="profileImageInput" accept="image/*" style="display:none" />
+                <button type="button" class="btn btn-sm" id="uploadImageBtn">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload Photo
+                </button>
+                <button type="button" class="btn btn-sm btn-ghost btn-danger" id="removeImageBtn">Remove</button>
+              </div>
+              <div class="avatar-upload-hint">Square image recommended. Max 3MB.</div>
             </div>
           </div>
 
@@ -4225,6 +4334,10 @@
     document.getElementById("profileNameInput").value = state.profile.name || "";
     const preview = document.getElementById("profileAvatarPreview");
     preview.innerHTML = state.profile.image ? `<img src="${state.profile.image}" alt="Profile photo" />` : initials(state.profile.name);
+    
+    const removeBtn = document.getElementById("removeImageBtn");
+    if(removeBtn) removeBtn.style.display = state.profile.image ? "inline-flex" : "none";
+    
     document.getElementById("profileToast").textContent = "";
 
     const select = document.getElementById("importExportAccountSelect");
@@ -4233,6 +4346,8 @@
   }
 
   document.getElementById("uploadImageBtn").addEventListener("click", () => document.getElementById("profileImageInput").click());
+  document.getElementById("avatarPreviewWrapper")?.addEventListener("click", () => document.getElementById("profileImageInput").click());
+
   document.getElementById("profileImageInput").addEventListener("change", (e)=>{
     const file = e.target.files[0];
     if(!file) return;
@@ -4240,13 +4355,17 @@
     const reader = new FileReader();
     reader.onload = ()=>{
       state.profile.image = reader.result;
+      saveState();
       renderProfile();
       updateSidebarProfile();
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
   });
+
   document.getElementById("removeImageBtn").addEventListener("click", ()=>{
     state.profile.image = "";
+    saveState();
     renderProfile();
     updateSidebarProfile();
   });
