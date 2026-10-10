@@ -133,13 +133,14 @@
   }
 
   *, *::before, *::after { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; padding: 0; }
+  html, body { height: 100%; height: 100dvh; margin: 0; padding: 0; overflow-x: hidden; max-width: 100vw; }
   body {
     background: var(--bg-gradient);
     color: var(--text);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
+    max-width: 100vw;
     transition: background 0.3s ease, color 0.3s ease;
   }
   ::selection { background: var(--accent-soft-2); color: var(--text); }
@@ -177,7 +178,7 @@
   }
 
   /* ---------- App Layout ---------- */
-  .app { display: flex; height: 100vh; width: 100vw; position: relative; }
+  .app { display: flex; height: 100%; height: 100dvh; width: 100vw; max-width: 100vw; position: relative; overflow-x: hidden; }
 
   /* ---------- Sidebar ---------- */
   /* ---------- Sidebar ---------- */
@@ -538,7 +539,7 @@
   }
 
   /* ---------- Main Area ---------- */
-  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100vh; }
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; max-width: 100%; height: 100%; height: 100dvh; overflow-x: hidden; }
 
   .topbar {
     height: 70px;
@@ -1533,13 +1534,137 @@
     .no-print { display: none !important; }
   }
 
+  /* Loan Stat Grid desktop base */
+  .loan-stat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Mobile Month Navigation Bar (in greeting banner) */
+  .mobile-month-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-full);
+    padding: 6px 12px;
+    box-shadow: var(--shadow-1);
+    width: 100%;
+  }
+  .mobile-month-bar button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .mobile-month-bar button:active {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .mobile-month-label {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    flex: 1;
+  }
+
+  /* Responsive Tables and KPI Grids for Modals */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 14px;
+  }
+  .report-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Mobile Bottom Navigation Bar */
+  .bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(62px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--bg-sidebar);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border-top: 1px solid var(--border-glass);
+    z-index: 55;
+    align-items: center;
+    justify-content: space-around;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--text-faint);
+    background: none;
+    border: none;
+    padding: 6px 4px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+  }
+  .bottom-nav-item .bnav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .bottom-nav-item .bnav-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    transition: var(--transition);
+  }
+  .bottom-nav-item .bnav-label {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .bottom-nav-item:hover, .bottom-nav-item.active {
+    color: var(--accent);
+  }
+  .bottom-nav-item.active .bnav-icon svg {
+    stroke: var(--accent);
+    stroke-width: 2.3;
+  }
+
   /* Responsive Breakpoints */
   @media (max-width: 1200px) {
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
     .grid-2 { grid-template-columns: 1fr; }
   }
+
   @media (max-width: 900px) {
-    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); width: 256px !important; padding: 20px 14px !important; }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      transform: translateX(-100%);
+      width: 256px !important;
+      padding: 20px 14px !important;
+    }
     .sidebar.open { transform: translateX(0); }
     .desktop-sidebar-toggle { display: none !important; }
     .sidebar-collapse-btn { display: none !important; }
@@ -1548,21 +1673,282 @@
     .nav-item .nav-text { display: inline !important; }
     .sidebar-profile-info { display: block !important; }
     .hamburger { display: flex; }
-    .topbar { padding: 0 16px; gap: 10px; }
-    .content { padding: 18px 16px 60px; }
+    .topbar { padding: 0 16px; gap: 10px; height: 60px; flex: 0 0 60px; }
+    .content { padding: 18px 16px calc(76px + env(safe-area-inset-bottom, 12px)) !important; }
     #viewTitle { font-size: 18px; }
     .month-nav { display: none; }
+    .mobile-month-bar { display: flex; }
+    .bottom-nav { display: flex; }
     .btn span.btn-label-desktop { display: none; }
     .pie-wrap { flex-direction: column; align-items: stretch; }
     .pie-canvas-box { align-self: center; }
   }
-  @media (max-width: 540px) {
-    .stat-grid { grid-template-columns: 1fr; }
+
+  @media (max-width: 768px) {
+    .app, .main, .content { max-width: 100vw; min-width: 0; overflow-x: hidden; }
+
+    /* Compact 2x2 Metric Cards */
+    .stat-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      padding: 16px 14px;
+      border-radius: var(--radius-md);
+    }
+    .stat-value {
+      font-size: 21px;
+    }
+    .stat-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+    }
+    .stat-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+    .stat-label {
+      font-size: 11px;
+    }
+    .stat-sub {
+      font-size: 11.5px;
+    }
+
+    /* Loan Stat Grid */
+    .loan-stat-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .loan-stat-grid .stat-card:last-child {
+      grid-column: span 2;
+    }
+
+    /* Month Accordion Head - wrap title & stats gracefully */
+    .month-group-head {
+      flex-wrap: wrap;
+      padding: 14px 14px;
+      gap: 10px;
+    }
+    .month-group-title {
+      flex: 1;
+      font-size: 14.5px;
+    }
+    .month-group-stats {
+      order: 3;
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-glass);
+      font-size: 12px;
+    }
+    .open-month-pdf-btn {
+      order: 2;
+      margin-right: 0 !important;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .chevron {
+      order: 2;
+    }
+    .month-group-body {
+      padding: 0 10px 10px;
+    }
+
+    .report-kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    /* Responsive Topbar on Phones */
+    .topbar {
+      padding: 0 12px;
+      gap: 8px;
+      height: 56px;
+      flex: 0 0 56px;
+    }
+    .topbar-actions {
+      gap: 6px;
+    }
+    .topbar-actions #openReportModalBtn,
+    .topbar-actions #quickTransferBtn {
+      display: none !important;
+    }
+    .privacy-toggle-btn, .theme-toggle-btn {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+    }
+    #quickAddBtn {
+      padding: 7px 12px;
+      height: 36px;
+      font-size: 13px;
+    }
+    #viewTitle {
+      font-size: 16px;
+    }
+
+    /* Greeting Banner & Quick Action Pills 2-Column Grid */
+    .greeting-banner {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .greeting-title {
+      font-size: 20px;
+    }
+    .greeting-sub {
+      font-size: 13px;
+    }
+    .quick-action-pills {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      width: 100%;
+    }
+    .quick-action-pills .btn {
+      width: 100%;
+      justify-content: center;
+      padding: 8px 10px;
+      font-size: 12.5px;
+    }
+    .quick-action-pills #dashOpenReportBtn {
+      grid-column: span 2;
+    }
+
+    /* Touch-Friendly Transaction & Loan Rows */
+    .row {
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 12px 10px;
+      gap: 10px;
+      position: relative;
+    }
+    .row-icon {
+      width: 36px;
+      height: 36px;
+      flex: 0 0 36px;
+      font-size: 13.5px;
+      border-radius: 10px;
+    }
+    .row-main {
+      flex: 1 1 calc(100% - 140px);
+      min-width: 0;
+    }
+    .row-title {
+      font-size: 13.5px;
+    }
+    .row-sub {
+      font-size: 11.5px;
+    }
+    .row-amt {
+      font-size: 14.5px;
+      text-align: right;
+      margin-left: auto;
+    }
+    .row-actions {
+      opacity: 1 !important;
+      width: 100%;
+      justify-content: flex-end;
+      padding-top: 6px;
+      border-top: 1px dashed var(--border-soft);
+      margin-top: 2px;
+      gap: 6px;
+    }
+    .row-actions .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+    .row-actions .icon-btn {
+      width: 32px;
+      height: 32px;
+    }
+
+    /* Toolbar & Search */
+    .toolbar {
+      gap: 8px;
+    }
+    .search-input-wrap {
+      min-width: 100%;
+      width: 100%;
+    }
+    .toolbar .field-select {
+      flex: 1 1 calc(50% - 4px);
+      min-width: 120px;
+      padding: 8px 10px;
+      font-size: 12.5px;
+    }
+    .toolbar .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Modal Bottom Sheet */
+    .modal-overlay {
+      padding: 0;
+      align-items: flex-end;
+    }
+    .modal {
+      width: 100%;
+      max-width: 100%;
+      max-height: 88vh;
+      border-radius: 22px 22px 0 0;
+      padding: 22px 18px calc(24px + env(safe-area-inset-bottom, 12px));
+      border-bottom: none;
+      animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUpModal {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .form-row {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* Report Modal Toolbar */
+    .report-modal-toolbar {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .report-modal-toolbar .btn,
+    .report-modal-toolbar .field-select {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .content { padding: 14px 12px calc(76px + env(safe-area-inset-bottom, 12px)) !important; }
+    .stat-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .stat-card {
+      padding: 12px 10px;
+    }
+    .stat-value {
+      font-size: 18px;
+      letter-spacing: -0.3px;
+    }
+    .stat-label {
+      font-size: 10px;
+    }
+    .loan-stat-grid {
+      grid-template-columns: 1fr;
+    }
+    .loan-stat-grid .stat-card:last-child {
+      grid-column: auto;
+    }
     .wallet-grid { grid-template-columns: 1fr; }
-    .modal { padding: 20px; }
-    .trend-chart-card { padding: 16px 14px 14px; }
-    .trend-svg-wrap { height: 210px; }
-    .trend-legend { gap: 10px; font-size: 11.5px; }
+    .tile-grid { grid-template-columns: 1fr; }
+    .trend-chart-card { padding: 14px 12px 12px; }
+    .trend-svg-wrap { height: 200px; }
+    .trend-legend { gap: 8px; font-size: 11px; flex-wrap: wrap; }
+    .report-kpi-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1719,6 +2105,16 @@
           <div>
             <h2 class="greeting-title" id="greetingUser">Welcome to ZHFinance! 👋</h2>
             <p class="greeting-sub" id="greetingDate">Here is your financial summary for this month.</p>
+          </div>
+          <!-- Mobile Month Bar (Visible on mobile/tablet) -->
+          <div class="mobile-month-bar" id="mobileMonthBar">
+            <button id="mobilePrevMonthBtn" aria-label="Previous month">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span class="mobile-month-label" id="mobileMonthLabel">October 2026</span>
+            <button id="mobileNextMonthBtn" aria-label="Next month">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
           </div>
           <div class="quick-action-pills">
             <button class="btn btn-sm" id="dashAddIncomeBtn">+ Income</button>
@@ -1957,7 +2353,7 @@
 
       <!-- ================= LOANS & DEBT ================= -->
       <section class="view" id="view-loans">
-        <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="stat-grid loan-stat-grid">
           <div class="stat-card card-3d">
             <div class="stat-card-head">
               <span class="stat-label">Given (Receivable / পাবো)</span>
@@ -2093,6 +2489,40 @@
     </div>
   </div>
 </div>
+
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="bottom-nav" id="bottomNav" aria-label="Mobile Navigation">
+  <button class="bottom-nav-item active" data-view="dashboard" title="Dashboard">
+    <div class="bnav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <span class="bnav-label">Dashboard</span>
+  </button>
+  <button class="bottom-nav-item" data-view="transactions" title="Transactions">
+    <div class="bnav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </div>
+    <span class="bnav-label">Records</span>
+  </button>
+  <button class="bottom-nav-item" data-view="accounts" title="Accounts & Wallets">
+    <div class="bnav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    </div>
+    <span class="bnav-label">Wallets</span>
+  </button>
+  <button class="bottom-nav-item" data-view="loans" title="Loans & Debt">
+    <div class="bnav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 6.5c0-2-2.5-3-5-3s-5 1.2-5 3 2.5 2.7 5 3 5 1 5 3-2.5 3-5 3-5-1-5-3"/></svg>
+    </div>
+    <span class="bnav-label">Loans</span>
+  </button>
+  <button class="bottom-nav-item" id="bottomNavMoreBtn" title="More Menu">
+    <div class="bnav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>
+    </div>
+    <span class="bnav-label">More</span>
+  </button>
+</nav>
 
 <!-- Modal Container -->
 <div class="modal-overlay" id="modalOverlay">
@@ -2385,7 +2815,7 @@
 
   /* ================= Navigation & Collapsible Sidebar ================= */
   const views = document.querySelectorAll(".view");
-  const navItems = document.querySelectorAll(".nav-item[data-view], .sidebar-profile[data-view]");
+  const navItems = document.querySelectorAll(".nav-item[data-view], .sidebar-profile[data-view], .bottom-nav-item[data-view]");
   const viewTitle = document.getElementById("viewTitle");
   const dashboardMonthNav = document.getElementById("dashboardMonthNav");
   const sidebar = document.getElementById("sidebar");
@@ -2430,6 +2860,13 @@
     sidebar.classList.add("open");
     sidebarBackdrop.classList.add("active");
   });
+  const bottomNavMoreBtn = document.getElementById("bottomNavMoreBtn");
+  if(bottomNavMoreBtn){
+    bottomNavMoreBtn.addEventListener("click", () => {
+      sidebar.classList.add("open");
+      sidebarBackdrop.classList.add("active");
+    });
+  }
   sidebarBackdrop.addEventListener("click", closeSidebarMobile);
   function closeSidebarMobile(){
     sidebar.classList.remove("open");
@@ -2514,6 +2951,20 @@
     currentMonth = shiftMonth(currentMonth, 1);
     renderDashboard();
   });
+  const mobilePrevMonthBtn = document.getElementById("mobilePrevMonthBtn");
+  const mobileNextMonthBtn = document.getElementById("mobileNextMonthBtn");
+  if(mobilePrevMonthBtn){
+    mobilePrevMonthBtn.addEventListener("click", ()=>{
+      currentMonth = shiftMonth(currentMonth, -1);
+      renderDashboard();
+    });
+  }
+  if(mobileNextMonthBtn){
+    mobileNextMonthBtn.addEventListener("click", ()=>{
+      currentMonth = shiftMonth(currentMonth, 1);
+      renderDashboard();
+    });
+  }
   function shiftMonth(key, delta){
     const [y,m] = key.split("-").map(Number);
     const d = new Date(y, m-1+delta, 1);
@@ -3461,6 +3912,8 @@
     const isGeneric = !pName || pName.toLowerCase() === "my finances" || pName.toLowerCase() === "user";
     document.getElementById("greetingUser").textContent = isGeneric ? "Welcome to ZHFinance! 👋" : `Welcome back, ${pName.split(' ')[0]}! 👋`;
     document.getElementById("monthLabel").textContent = monthLabelFromKey(currentMonth);
+    const mobileMonthLabel = document.getElementById("mobileMonthLabel");
+    if(mobileMonthLabel) mobileMonthLabel.textContent = monthLabelFromKey(currentMonth);
 
     const selectedAccountId = document.getElementById("dashboardAccountSelect").value || "all";
     const accountSelect = document.getElementById("dashboardAccountSelect");
@@ -3755,7 +4208,7 @@
         <button class="modal-close" data-close>&times;</button>
       </div>
 
-      <div style="display:flex;gap:10px;margin-bottom:18px;">
+      <div class="report-modal-toolbar" style="display:flex;gap:10px;margin-bottom:18px;">
         <select class="field-select full" id="reportMonthSelect">
           ${[...new Set(state.transactions.map(t => monthKey(t.date)))].sort().reverse().map(k => `
             <option value="${k}" ${k===monthKeyStr?'selected':''}>${monthLabelFromKey(k)}</option>
@@ -3783,7 +4236,7 @@
         </div>
 
         <!-- 4 KPI Boxes -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+        <div class="report-kpi-grid">
           <div style="background:var(--bg-card);padding:14px;border-radius:12px;border:1px solid var(--border-glass);">
             <div style="font-size:11px;color:var(--text-faint);text-transform:uppercase;">Total Income</div>
             <div style="font-size:18px;font-weight:800;color:var(--income);">${fmtMoney(income, true)}</div>
@@ -3804,46 +4257,52 @@
 
         <!-- Categories Summary -->
         <h4 style="margin:16px 0 8px;font-size:14px;">Spending by Category</h4>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px;">
-          <thead>
-            <tr style="color:var(--text-faint);text-align:left;border-bottom:1px solid var(--border);">
-              <th style="padding:6px 12px;">Category</th>
-              <th style="padding:6px 12px;">Type</th>
-              <th style="padding:6px 12px;text-align:right;">Budget</th>
-              <th style="padding:6px 12px;text-align:right;">Actual</th>
-              <th style="padding:6px 12px;text-align:right;">%</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${catRows || '<tr><td colspan="5" style="padding:10px;text-align:center;">No records.</td></tr>'}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px;">
+            <thead>
+              <tr style="color:var(--text-faint);text-align:left;border-bottom:1px solid var(--border);">
+                <th style="padding:6px 12px;">Category</th>
+                <th style="padding:6px 12px;">Type</th>
+                <th style="padding:6px 12px;text-align:right;">Budget</th>
+                <th style="padding:6px 12px;text-align:right;">Actual</th>
+                <th style="padding:6px 12px;text-align:right;">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${catRows || '<tr><td colspan="5" style="padding:10px;text-align:center;">No records.</td></tr>'}
+            </tbody>
+          </table>
+        </div>
 
         <!-- Accounts Summary -->
         <h4 style="margin:16px 0 8px;font-size:14px;">Account Balances</h4>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px;">
-          <thead>
-            <tr style="color:var(--text-faint);text-align:left;border-bottom:1px solid var(--border);">
-              <th style="padding:6px 12px;">Account</th>
-              <th style="padding:6px 12px;text-align:right;">Current Balance</th>
-            </tr>
-          </thead>
-          <tbody>${accRows}</tbody>
-        </table>
+        <div class="table-responsive">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px;">
+            <thead>
+              <tr style="color:var(--text-faint);text-align:left;border-bottom:1px solid var(--border);">
+                <th style="padding:6px 12px;">Account</th>
+                <th style="padding:6px 12px;text-align:right;">Current Balance</th>
+              </tr>
+            </thead>
+            <tbody>${accRows}</tbody>
+          </table>
+        </div>
 
         <!-- Transactions Ledger -->
         <h4 style="margin:16px 0 8px;font-size:14px;">Transaction Ledger (${txs.length} records)</h4>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="color:var(--text-faint);text-align:left;border-bottom:1px solid var(--border);">
-              <th style="padding:6px 10px;">Date</th>
-              <th style="padding:6px 10px;">Category / Transfer</th>
-              <th style="padding:6px 10px;">Note</th>
-              <th style="padding:6px 10px;text-align:right;">Amount</th>
-            </tr>
-          </thead>
-          <tbody>${txTableRows || '<tr><td colspan="4" style="padding:10px;text-align:center;">No transactions this month.</td></tr>'}</tbody>
-        </table>
+        <div class="table-responsive">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="color:var(--text-faint);text-align:left;border-bottom:1px solid var(--border);">
+                <th style="padding:6px 10px;">Date</th>
+                <th style="padding:6px 10px;">Category / Transfer</th>
+                <th style="padding:6px 10px;">Note</th>
+                <th style="padding:6px 10px;text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${txTableRows || '<tr><td colspan="4" style="padding:10px;text-align:center;">No transactions this month.</td></tr>'}</tbody>
+          </table>
+        </div>
       </div>
     `;
 
