@@ -878,13 +878,25 @@
     transform: translateY(-4px) scale(1.015);
     box-shadow: var(--shadow-2);
   }
-  .wallet-card.card-saikot {
+  .wallet-card.theme-indigo, .wallet-card.theme-0 {
     background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);
     border: 1px solid rgba(129, 140, 248, 0.35);
   }
-  .wallet-card.card-eity {
+  .wallet-card.theme-purple, .wallet-card.theme-1 {
     background: linear-gradient(135deg, #4A044E 0%, #701A75 50%, #86198F 100%);
     border: 1px solid rgba(232, 121, 249, 0.35);
+  }
+  .wallet-card.theme-2 {
+    background: linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+  }
+  .wallet-card.theme-3 {
+    background: linear-gradient(135deg, #0C4A6E 0%, #075985 50%, #0284C7 100%);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+  }
+  .wallet-card.theme-4 {
+    background: linear-gradient(135deg, #713F12 0%, #854D0E 50%, #A16207 100%);
+    border: 1px solid rgba(251, 191, 36, 0.35);
   }
   .wallet-card.card-other {
     background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
@@ -1632,9 +1644,9 @@
       </button>
     </nav>
     <button class="sidebar-profile" data-view="profile" data-tooltip="Profile & Settings">
-      <div class="avatar" id="sidebarAvatar">Z</div>
+      <div class="avatar" id="sidebarAvatar">ZH</div>
       <div class="sidebar-profile-info" style="flex:1;min-width:0;">
-        <div class="sidebar-profile-name" id="sidebarName">MD. Ziaul Hasan</div>
+        <div class="sidebar-profile-name" id="sidebarName">My Finances</div>
         <div class="sidebar-profile-sub">Settings & Backup</div>
       </div>
     </button>
@@ -1705,7 +1717,7 @@
         <!-- Welcome Greeting Banner -->
         <div class="greeting-banner">
           <div>
-            <h2 class="greeting-title" id="greetingUser">Welcome back, Ziaul! 👋</h2>
+            <h2 class="greeting-title" id="greetingUser">Welcome to ZHFinance! 👋</h2>
             <p class="greeting-sub" id="greetingDate">Here is your financial summary for this month.</p>
           </div>
           <div class="quick-action-pills">
@@ -2056,10 +2068,15 @@
               </button>
             </div>
 
-            <!-- Preloaded Backup Restore Button -->
-            <button class="btn btn-block btn-ghost" id="restoreProvidedDataBtn" style="border:1px dashed var(--accent);color:var(--accent);margin-bottom:10px;">
-              🔄 Restore Initial Oct 2026 Data Backup (Preloaded)
-            </button>
+            <!-- Demo Data & Starter State Controls -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <button type="button" class="btn btn-block btn-ghost" id="loadDemoDataBtn" style="border:1px dashed var(--accent);color:var(--accent);font-size:12.5px;padding:9px 6px;">
+                ✨ Load Demo Data
+              </button>
+              <button type="button" class="btn btn-block btn-ghost" id="resetStarterDataBtn" style="border:1px dashed var(--border-glass);color:var(--text-faint);font-size:12.5px;padding:9px 6px;">
+                🧹 Reset to Blank (৳0)
+              </button>
+            </div>
             
             <input type="file" id="importFileInput" accept=".json" style="display:none" />
             <div class="toast-note" id="importExportToast"></div>
@@ -2102,147 +2119,101 @@
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
   function todayISO(){ return new Date().toISOString().slice(0,10); }
 
-  /* User's Exact Data Backup for 100% Zero-Data-Loss guarantee */
-  const INITIAL_USER_BACKUP = {
-    "profile": { "name": "MD. Ziaul Hasan", "image": "" },
+  /* Clean Anonymous Default Starter Data for New Users */
+  const DEFAULT_STARTER_DATA = {
+    "profile": { "name": "My Finances", "image": "" },
     "accounts": [
-      { "id": "mt2fzjzeyvjm0h", "name": "Saikot Cash", "initial": 0 },
-      { "id": "mt2g7q9oxn1xvn", "name": "Eity Cash", "initial": 800 }
+      { "id": "acc_cash_01", "name": "Cash Wallet", "initial": 0 },
+      { "id": "acc_bank_02", "name": "Bank Account", "initial": 0 },
+      { "id": "acc_mfs_03", "name": "Mobile Banking", "initial": 0 }
     ],
     "categories": [
-      { "id": "mt2fzjze2lvl46", "name": "Salary", "type": "income" },
-      { "id": "mt2fzjzec9qu7a", "name": "Business", "type": "income" },
-      { "id": "mt2fzjzev47cp7", "name": "Gift", "type": "income" },
-      { "id": "mt2fzjze2uey4g", "name": "Other Income", "type": "income" },
-      { "id": "mt2fzjzesipj06", "name": "Food", "type": "expense", "budget": 5000 },
-      { "id": "mt2fzjzenlm0rd", "name": "Transport", "type": "expense", "budget": 3000 },
-      { "id": "mt2fzjze6o8kg2", "name": "Bills & Utilities", "type": "expense", "budget": 2000 },
-      { "id": "mt2fzjzev4p7i2", "name": "Shopping", "type": "expense", "budget": 4000 },
-      { "id": "mt2fzjze7wfq3x", "name": "Health", "type": "expense", "budget": 2500 },
-      { "id": "mt2fzjze2umgja", "name": "Other Expense", "type": "expense" },
-      { "id": "mt2g9h9n7vr24w", "name": "House Rent", "type": "expense", "budget": 13000 },
-      { "id": "mt2g9uf1hi4pc6", "name": "Internet", "type": "expense", "budget": 1200 },
-      { "id": "mt2gbfcjf6cxid", "name": "Repay The Debt", "type": "expense" },
-      { "id": "mt2gbta5qg90lc", "name": "Coffee", "type": "expense" },
-      { "id": "mt2gc8ofejz2a1", "name": "For My Wife", "type": "expense" },
-      { "id": "mt2gd3ojh7zmsp", "name": "For My Mom And Dad", "type": "expense" },
-      { "id": "mtg2mysofr5ipo", "name": "For Future", "type": "expense" },
-      { "id": "mtol25gqs6k8rq", "name": "From Husband", "type": "income" },
-      { "id": "mtol2b43cvzepg", "name": "From Wife", "type": "income" },
-      { "id": "mtol2mhhd3qwmn", "name": "For Husband", "type": "expense" }
+      { "id": "cat_inc_salary", "name": "Salary", "type": "income" },
+      { "id": "cat_inc_business", "name": "Business", "type": "income" },
+      { "id": "cat_inc_freelance", "name": "Freelance", "type": "income" },
+      { "id": "cat_inc_invest", "name": "Investments", "type": "income" },
+      { "id": "cat_inc_other", "name": "Other Income", "type": "income" },
+      { "id": "cat_exp_food", "name": "Food & Dining", "type": "expense", "budget": 6000 },
+      { "id": "cat_exp_groceries", "name": "Groceries", "type": "expense", "budget": 8000 },
+      { "id": "cat_exp_rent", "name": "Housing & Rent", "type": "expense", "budget": 15000 },
+      { "id": "cat_exp_bills", "name": "Bills & Utilities", "type": "expense", "budget": 3000 },
+      { "id": "cat_exp_transport", "name": "Transportation", "type": "expense", "budget": 3000 },
+      { "id": "cat_exp_shopping", "name": "Shopping", "type": "expense", "budget": 4000 },
+      { "id": "cat_exp_health", "name": "Healthcare", "type": "expense", "budget": 2500 },
+      { "id": "cat_exp_entertainment", "name": "Entertainment", "type": "expense", "budget": 2000 },
+      { "id": "cat_exp_other", "name": "Other Expense", "type": "expense" }
     ],
-    "transactions": [
-      { "id": "mt2ggc566r252t", "type": "income", "amount": 16000, "categoryId": "mt2fzjze2lvl46", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-10", "note": "Salary · OrangeToolz Salary" },
-      { "id": "mt2ghp55vpw1ha", "type": "expense", "amount": 200, "categoryId": "mt2fzjze7wfq3x", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-10", "note": "Eity Medicine and Food" },
-      { "id": "mt2gif16qqbgqy", "type": "expense", "amount": 300, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-10", "note": "Office Transport" },
-      { "id": "mt2gj2illdwddo", "type": "expense", "amount": 1000, "categoryId": "mt2gc8ofejz2a1", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-21", "note": "Repay Eity" },
-      { "id": "mt2gjrp4ciwjjb", "type": "expense", "amount": 500, "categoryId": "mt2g9uf1hi4pc6", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-10", "note": "Net bill" },
-      { "id": "mt2gkdmastiup1", "type": "expense", "amount": 13000, "categoryId": "mt2g9h9n7vr24w", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-10", "note": "" },
-      { "id": "mt2glb9rn1b5pa", "type": "income", "amount": 34000, "categoryId": "mt2fzjze2lvl46", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-12", "note": "Sam Salary" },
-      { "id": "mt2gm6ujyy58i1", "type": "expense", "amount": 2500, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-12", "note": "Hamim Paiito" },
-      { "id": "mt2gnbsny574x5", "type": "expense", "amount": 9500, "categoryId": "mt2fzjze2umgja", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-12", "note": "SEO Expert Salary DIchi" },
-      { "id": "mt2go67fwkpx3m", "type": "expense", "amount": 1500, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-12", "note": "Office Transport And Metro rechearge" },
-      { "id": "mt2gozt3o1dwf9", "type": "expense", "amount": 500, "categoryId": "mt2fzjzesipj06", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-12", "note": "Apple, Water, Coconut" },
-      { "id": "mt2gpxhv9x7cvd", "type": "expense", "amount": 4000, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-12", "note": "Office er taka Dider paito" },
-      { "id": "mt2grihuc4hs14", "type": "expense", "amount": 200, "categoryId": "mt2fzjze6o8kg2", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-12", "note": "Check Book Price" },
-      { "id": "mt2guokoqkkzl7", "type": "expense", "amount": 10000, "categoryId": "mt2gc8ofejz2a1", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-13", "note": "6 Hazar Loan Chilo And Dilam 4000" },
-      { "id": "mt2gvbxuewyso5", "type": "expense", "amount": 500, "categoryId": "mt2fzjzesipj06", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-13", "note": "Gorib Dukhir jonno" },
-      { "id": "mt2gwbzj1uz677", "type": "expense", "amount": 1000, "categoryId": "mt2gd3ojh7zmsp", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-13", "note": "" },
-      { "id": "mt2gznfqhnyybg", "type": "expense", "amount": 2000, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-13", "note": "Shirin Apur loan" },
-      { "id": "mt2h0fgxxqquy3", "type": "expense", "amount": 2100, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-13", "note": "bkash Loan" },
-      { "id": "mt2h156zxt5npa", "type": "expense", "amount": 400, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-14", "note": "Bkash Loan" },
-      { "id": "mt2h1srq5npxjr", "type": "expense", "amount": 500, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-15", "note": "Office Transport" },
-      { "id": "mt2h2fp5yza2pb", "type": "expense", "amount": 500, "categoryId": "mt2gbta5qg90lc", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-15", "note": "" },
-      { "id": "mt2h37ml40ung6", "type": "income", "amount": 1200, "categoryId": "mt2fzjze2uey4g", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-15", "note": "MOnitor Kenar loan nichilam j oikhan theke Bajche" },
-      { "id": "mt2h43vk169rfo", "type": "expense", "amount": 500, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-17", "note": "Office transport and Medicine" },
-      { "id": "mt34szhmkok8gk", "type": "expense", "amount": 500, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-21", "note": "Office Transport" },
-      { "id": "mt7f3wws45155g", "type": "expense", "amount": 550, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-08-23", "note": "Kacha bazar" },
-      { "id": "mt7f4dad87upbe", "type": "expense", "amount": 50, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2g7q9oxn1xvn", "date": "2026-08-23", "note": "" },
-      { "id": "mt7f4oyfk4r0g1", "type": "expense", "amount": 200, "categoryId": "mt2fzjze7wfq3x", "accountId": "mt2g7q9oxn1xvn", "date": "2026-08-23", "note": "Medicines" },
-      { "id": "mt7f59w15uww0f", "type": "income", "amount": 7400, "categoryId": "mt2fzjzec9qu7a", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-24", "note": "" },
-      { "id": "mt7f6hx398dnmz", "type": "expense", "amount": 900, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-24", "note": "bkash Loan" },
-      { "id": "mt7f7596izw3nv", "type": "expense", "amount": 700, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-24", "note": "Rapid Card Recharge" },
-      { "id": "mt7f7yg57em2zk", "type": "expense", "amount": 1000, "categoryId": "mt2gc8ofejz2a1", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-24", "note": "500 nichilam+ 500 gift" },
-      { "id": "mt7ffc85ob88no", "type": "expense", "amount": 300, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-24", "note": "Rickshaw vara and cha khoroch" },
-      { "id": "mt7fkid8tuvvti", "type": "income", "amount": 1000, "categoryId": "mt2fzjzev47cp7", "accountId": "mt2g7q9oxn1xvn", "date": "2026-08-24", "note": "Gift from Husband" },
-      { "id": "mt80od8kp2cljk", "type": "expense", "amount": 2600, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-25", "note": "Monitor er jonno nichilam shirin apur kache theke" },
-      { "id": "mtaajam43gpp9x", "type": "expense", "amount": 400, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-26", "note": "Office Transport" },
-      { "id": "mtd33ti16mmy5i", "type": "expense", "amount": 500, "categoryId": "mt2fzjzesipj06", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-28", "note": "Doi and snacks" },
-      { "id": "mtelocn9swp1tx", "type": "expense", "amount": 200, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-29", "note": "bkash Loan" },
-      { "id": "mtelqf0l6z45ay", "type": "expense", "amount": 800, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-08-29", "note": "office Transport and nasta pani" },
-      { "id": "mtg2nbahi2tf8g", "type": "expense", "amount": 500, "categoryId": "mtg2mysofr5ipo", "accountId": "mt2g7q9oxn1xvn", "date": "2026-08-30", "note": "" },
-      { "id": "mtivw4nbbfb1et", "type": "expense", "amount": 370, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-01", "note": "Kacha bazar" },
-      { "id": "mtivwj6w9ag9lo", "type": "expense", "amount": 130, "categoryId": "mt2fzjze7wfq3x", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-01", "note": "Medicines" },
-      { "id": "mtiw0914z3ryth", "type": "income", "amount": 17000, "categoryId": "mt2fzjze2lvl46", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-01", "note": "" },
-      { "id": "mtoa8soxvr5nbr", "type": "expense", "amount": 570, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtoaaymjxbyp0t", "type": "expense", "amount": 2620, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtoacktmi0j79a", "type": "expense", "amount": 370, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtoad5tgkdqddn", "type": "expense", "amount": 1000, "categoryId": "mt2g9uf1hi4pc6", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtoafrenob0xbw", "type": "expense", "amount": 500, "categoryId": "mtol2mhhd3qwmn", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtoahkrbf865jb", "type": "expense", "amount": 230, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtoamq065p1i0o", "type": "expense", "amount": 20, "categoryId": "mt2g9uf1hi4pc6", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtoanbt42fw32l", "type": "expense", "amount": 400, "categoryId": "mt2fzjze7wfq3x", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "Medicines" },
-      { "id": "mtoanvqbe52st1", "type": "expense", "amount": 370, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "Kacha bazar" },
-      { "id": "mtol0useon9w03", "type": "expense", "amount": 2000, "categoryId": "mtg2mysofr5ipo", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-05", "note": "" },
-      { "id": "mtq3fotcdjddrw", "type": "expense", "amount": 240, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-06", "note": "Dud and Kola and battery" },
-      { "id": "mtq3ggb7x3mgjr", "type": "expense", "amount": 3000, "categoryId": "mt2fzjze2umgja", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-06", "note": "For Marrige Certificate" },
-      { "id": "mtsv1ypblbbgop", "type": "expense", "amount": 420, "categoryId": "mt2fzjze7wfq3x", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-08", "note": "Medicines" },
-      { "id": "mtu9m0frn8oexv", "type": "expense", "amount": 100, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-09", "note": "Pani Kena hoiche" },
-      { "id": "mtwi2w82rfiuqm", "type": "income", "amount": 25000, "categoryId": "mt2fzjze2lvl46", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-11", "note": "OrangeToolz" },
-      { "id": "mtwi3svgr44zol", "type": "expense", "amount": 1200, "categoryId": "mt2g9uf1hi4pc6", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-11", "note": "Net bill" },
-      { "id": "mtwi44868vo3f9", "type": "expense", "amount": 800, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-11", "note": "bkash Loan" },
-      { "id": "mtwjyy25tlr9je", "type": "expense", "amount": 2000, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-11", "note": "Eity er kache theke niyechilam Kabin er jonno" },
-      { "id": "mtx7oasr45dquf", "type": "expense", "amount": 13000, "categoryId": "mt2g9h9n7vr24w", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-11", "note": "" },
-      { "id": "mtx7vcab4xd9pg", "type": "expense", "amount": 160, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-11", "note": "" },
-      { "id": "mtydbz0iprlla6", "type": "expense", "amount": 500, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-12", "note": "Monitor er taka Shirin apur" },
-      { "id": "mtyddy0yup3zk1", "type": "income", "amount": 24000, "categoryId": "mt2fzjze2lvl46", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-12", "note": "Sam Massiri" },
-      { "id": "mtydfsg2udlhsi", "type": "expense", "amount": 5000, "categoryId": "mt2gc8ofejz2a1", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-12", "note": "Chain er Loan Repay" },
-      { "id": "mtydk1zdox2wzl", "type": "income", "amount": 5000, "categoryId": "mtol25gqs6k8rq", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-12", "note": "For Chain Loan" },
-      { "id": "mtyh9vh43jxq8j", "type": "expense", "amount": 6000, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-12", "note": "Sakib paito, monitor kenar jonno nichilam" },
-      { "id": "mtyhd687wljtzg", "type": "expense", "amount": 500, "categoryId": "mt2fzjzesipj06", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-12", "note": "Snaks and Mobile net" },
-      { "id": "mu1e5pnebp8dri", "type": "expense", "amount": 1250, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-14", "note": "Kacha bazar" },
-      { "id": "mu1e6c4q7ad698", "type": "expense", "amount": 200, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-14", "note": "Jamburar Daam" },
-      { "id": "mu1e6sdx7176w5", "type": "expense", "amount": 6500, "categoryId": "mt2g9h9n7vr24w", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-14", "note": "" },
-      { "id": "mu1g3n93qffbqb", "type": "expense", "amount": 2000, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-13", "note": "Shirin apu. Monitor er jonno nichilam" },
-      { "id": "mu1gae54r9sxq4", "type": "expense", "amount": 6000, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-14", "note": "Shakib [Monitor kenar jonno nichilam]" },
-      { "id": "mu1gb9ww5ggsmv", "type": "expense", "amount": 2500, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-13", "note": "bkash Loan" },
-      { "id": "mu1gfiw28bs4hc", "type": "expense", "amount": 1000, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-13", "note": "Office Transport And Hatkhoroch" },
-      { "id": "mu1ggnaoc375e2", "type": "expense", "amount": 550, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-14", "note": "bkash Loan" },
-      { "id": "mu2xayf4xfkj7d", "type": "income", "amount": 1500, "categoryId": "mt2fzjze2lvl46", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-15", "note": "Sam Massiri [Property Upload]" },
-      { "id": "mu2xcde28wpapr", "type": "expense", "amount": 1500, "categoryId": "mt2fzjze2umgja", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-15", "note": "Property Upload er jonno Salary dichi" },
-      { "id": "mu2xeuamrnr7am", "type": "expense", "amount": 2030, "categoryId": "mt2fzjze7wfq3x", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-15", "note": "Medicines" },
-      { "id": "mu2xfgepbb09bs", "type": "expense", "amount": 190, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-15", "note": "Panni and kola" },
-      { "id": "mu2xfu6bft836q", "type": "expense", "amount": 30, "categoryId": "mt2g9uf1hi4pc6", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-15", "note": "Mobile rechearge" },
-      { "id": "mu4bn8mbsz75l6", "type": "expense", "amount": 430, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-16", "note": "Kacha bazar" },
-      { "id": "mu4bnsxq2ccmtc", "type": "expense", "amount": 30, "categoryId": "mt2g9uf1hi4pc6", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-16", "note": "Mobile rechearge" },
-      { "id": "mu4bx0qst5c8o2", "type": "expense", "amount": 1600, "categoryId": "mt2fzjzev4p7i2", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-16", "note": "Trimmer kinchi" },
-      { "id": "mu8hk47jpnt6xf", "type": "expense", "amount": 400, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-18", "note": "Kacha bazar" },
-      { "id": "mu8hlpd6oj0fle", "type": "expense", "amount": 1500, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-19", "note": "Bari gechi aschi" },
-      { "id": "mu8hqajur51sz4", "type": "expense", "amount": 350, "categoryId": "mt2g9uf1hi4pc6", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-19", "note": "Mobile rechearge" },
-      { "id": "mua0826xxv6srl", "type": "expense", "amount": 500, "categoryId": "mt2gc8ofejz2a1", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-20", "note": "Eity k dichi" },
-      { "id": "mua08bayj5lgnc", "type": "income", "amount": 500, "categoryId": "mtol25gqs6k8rq", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-20", "note": "" },
-      { "id": "mua09bqut7bnt1", "type": "expense", "amount": 500, "categoryId": "mt2fzjzev4p7i2", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-20", "note": "light, air purifier, cutter,etc" },
-      { "id": "mua0a5pe1mqs9y", "type": "expense", "amount": 600, "categoryId": "mt2fzjze6o8kg2", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-20", "note": "AI Bill for 18 months" },
-      { "id": "mua0c5eaw18g5n", "type": "expense", "amount": 800, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-20", "note": "Bazar and Snacks" },
-      { "id": "mubm5l229iljnc", "type": "expense", "amount": 200, "categoryId": "mt2gbfcjf6cxid", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-21", "note": "bkash Loan" },
-      { "id": "mubm65i3xxmvjb", "type": "expense", "amount": 300, "categoryId": "mt2fzjze2umgja", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-21", "note": "Aunty der DOi kina dichi" },
-      { "id": "mucvbxhhzni69d", "type": "expense", "amount": 500, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-22", "note": "Office Transport" },
-      { "id": "muec59g9uulnrd", "type": "expense", "amount": 140, "categoryId": "mt2fzjzesipj06", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-23", "note": "Water" },
-      { "id": "muec66oshmbbjr", "type": "expense", "amount": 400, "categoryId": "mt2fzjzenlm0rd", "accountId": "mt2fzjzeyvjm0h", "date": "2026-09-23", "note": "Eityr Bashay jaoar jonno" },
-      { "id": "muk4a7dr9teyx7", "type": "income", "amount": 17000, "categoryId": "mt2fzjze2lvl46", "accountId": "mt2g7q9oxn1xvn", "date": "2026-09-27", "note": "" }
-    ],
-    "loans": [
-      { "id": "mt2h7zch7wfpvv", "type": "taken", "person": "Najmush Sakib", "amount": 6000, "date": "2026-08-15", "note": "To Purchase a Monitor", "paid": true, "linkedToBalance": false },
-      { "id": "mt2h8eyje085nk", "type": "taken", "person": "Shirin Apu", "amount": 2000, "date": "2026-08-15", "note": "To Purchase a Monitor", "paid": true, "linkedToBalance": false },
-      { "id": "mtq3oog0d3gzlr", "type": "taken", "person": "Shirin Apu", "amount": 500, "date": "2026-09-06", "note": "For office Transport", "paid": true, "linkedToBalance": false },
-      { "id": "mtq3ox0wlo608c", "type": "taken", "person": "From Eity", "amount": 3000, "date": "2026-09-06", "note": "For Marriage Certificate", "paid": true, "linkedToBalance": false },
-      { "id": "mu1g9blbgoamij", "type": "given", "person": "Shirin Apu", "amount": 5000, "date": "2026-09-13", "note": "Ami Shirin Apu re Korjo dichi", "paid": false, "linkedToBalance": false }
-    ],
-    "exportedAt": "2026-10-01T16:00:12.606Z"
+    "transactions": [],
+    "loans": [],
+    "exportedAt": new Date().toISOString()
   };
 
+  /* Completely Fictional, Anonymized Demo Data for Testing/Showcase */
+  function getDemoData(){
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+
+    function makeDate(mOffset, day){
+      const d = new Date(curYear, curMonth + mOffset, day);
+      return d.toISOString().slice(0, 10);
+    }
+
+    return {
+      "profile": { "name": "Demo User", "image": "" },
+      "accounts": [
+        { "id": "acc_cash_01", "name": "Cash Wallet", "initial": 2500 },
+        { "id": "acc_bank_02", "name": "City Bank (Salary)", "initial": 45000 },
+        { "id": "acc_mfs_03", "name": "bKash / Nagad", "initial": 5200 }
+      ],
+      "categories": [
+        { "id": "cat_inc_salary", "name": "Salary", "type": "income" },
+        { "id": "cat_inc_business", "name": "Business", "type": "income" },
+        { "id": "cat_inc_freelance", "name": "Freelance", "type": "income" },
+        { "id": "cat_inc_invest", "name": "Investments", "type": "income" },
+        { "id": "cat_inc_other", "name": "Other Income", "type": "income" },
+        { "id": "cat_exp_food", "name": "Food & Dining", "type": "expense", "budget": 6000 },
+        { "id": "cat_exp_groceries", "name": "Groceries", "type": "expense", "budget": 8000 },
+        { "id": "cat_exp_rent", "name": "Housing & Rent", "type": "expense", "budget": 15000 },
+        { "id": "cat_exp_bills", "name": "Bills & Utilities", "type": "expense", "budget": 3000 },
+        { "id": "cat_exp_transport", "name": "Transportation", "type": "expense", "budget": 3000 },
+        { "id": "cat_exp_shopping", "name": "Shopping", "type": "expense", "budget": 4000 },
+        { "id": "cat_exp_health", "name": "Healthcare", "type": "expense", "budget": 2500 },
+        { "id": "cat_exp_entertainment", "name": "Entertainment", "type": "expense", "budget": 2000 },
+        { "id": "cat_exp_other", "name": "Other Expense", "type": "expense" }
+      ],
+      "transactions": [
+        { "id": "demo_t01", "type": "income", "amount": 65000, "categoryId": "cat_inc_salary", "accountId": "acc_bank_02", "date": makeDate(0, 1), "note": "Monthly Professional Salary" },
+        { "id": "demo_t02", "type": "income", "amount": 18000, "categoryId": "cat_inc_freelance", "accountId": "acc_mfs_03", "date": makeDate(0, 8), "note": "UI/UX Client Project Milestone" },
+        { "id": "demo_t03", "type": "expense", "amount": 15000, "categoryId": "cat_exp_rent", "accountId": "acc_bank_02", "date": makeDate(0, 3), "note": "Monthly Apartment Rent" },
+        { "id": "demo_t04", "type": "expense", "amount": 2400, "categoryId": "cat_exp_bills", "accountId": "acc_mfs_03", "date": makeDate(0, 5), "note": "Electricity & High-speed Fiber" },
+        { "id": "demo_t05", "type": "expense", "amount": 4200, "categoryId": "cat_exp_groceries", "accountId": "acc_cash_01", "date": makeDate(0, 7), "note": "Supermarket Weekly Fresh Groceries" },
+        { "id": "demo_t06", "type": "expense", "amount": 1650, "categoryId": "cat_exp_food", "accountId": "acc_mfs_03", "date": makeDate(0, 10), "note": "Weekend Family Dinner" },
+        { "id": "demo_t07", "type": "expense", "amount": 1200, "categoryId": "cat_exp_transport", "accountId": "acc_cash_01", "date": makeDate(0, 12), "note": "Metro Card Recharge & Fuel" },
+        { "id": "demo_t08", "type": "transfer", "amount": 5000, "fromAccountId": "acc_bank_02", "toAccountId": "acc_cash_01", "date": makeDate(0, 4), "note": "ATM Cash Withdrawal" },
+        { "id": "demo_t10", "type": "income", "amount": 65000, "categoryId": "cat_inc_salary", "accountId": "acc_bank_02", "date": makeDate(-1, 1), "note": "Monthly Professional Salary" },
+        { "id": "demo_t11", "type": "income", "amount": 12000, "categoryId": "cat_inc_freelance", "accountId": "acc_bank_02", "date": makeDate(-1, 15), "note": "Web Consulting Retainer" },
+        { "id": "demo_t12", "type": "expense", "amount": 15000, "categoryId": "cat_exp_rent", "accountId": "acc_bank_02", "date": makeDate(-1, 3), "note": "Monthly Apartment Rent" },
+        { "id": "demo_t13", "type": "expense", "amount": 2500, "categoryId": "cat_exp_bills", "accountId": "acc_mfs_03", "date": makeDate(-1, 6), "note": "Utility & Water Bills" },
+        { "id": "demo_t14", "type": "expense", "amount": 6200, "categoryId": "cat_exp_groceries", "accountId": "acc_cash_01", "date": makeDate(-1, 9), "note": "Monthly Pantry Restock" },
+        { "id": "demo_t15", "type": "expense", "amount": 3500, "categoryId": "cat_exp_shopping", "accountId": "acc_mfs_03", "date": makeDate(-1, 14), "note": "Books & Tech Accessories" },
+        { "id": "demo_t16", "type": "expense", "amount": 1800, "categoryId": "cat_exp_health", "accountId": "acc_cash_01", "date": makeDate(-1, 20), "note": "Routine Checkup & Vitamins" },
+        { "id": "demo_t20", "type": "income", "amount": 65000, "categoryId": "cat_inc_salary", "accountId": "acc_bank_02", "date": makeDate(-2, 1), "note": "Monthly Professional Salary" },
+        { "id": "demo_t21", "type": "expense", "amount": 15000, "categoryId": "cat_exp_rent", "accountId": "acc_bank_02", "date": makeDate(-2, 3), "note": "Monthly Apartment Rent" },
+        { "id": "demo_t22", "type": "expense", "amount": 5400, "categoryId": "cat_exp_groceries", "accountId": "acc_cash_01", "date": makeDate(-2, 11), "note": "Household Groceries" },
+        { "id": "demo_t23", "type": "expense", "amount": 2100, "categoryId": "cat_exp_bills", "accountId": "acc_mfs_03", "date": makeDate(-2, 7), "note": "Internet & Electricity" },
+        { "id": "demo_t24", "type": "expense", "amount": 1400, "categoryId": "cat_exp_transport", "accountId": "acc_cash_01", "date": makeDate(-2, 18), "note": "Office Commute" }
+      ],
+      "loans": [
+        { "id": "demo_l01", "type": "taken", "person": "Office Advance", "amount": 10000, "date": makeDate(-1, 5), "note": "Short-term festival advance", "paid": true, "linkedToBalance": false },
+        { "id": "demo_l02", "type": "given", "person": "Friend (Alex)", "amount": 5000, "date": makeDate(0, 6), "note": "Emergency temporary assistance", "paid": false, "linkedToBalance": false }
+      ],
+      "exportedAt": new Date().toISOString()
+    };
+  }
+
   function defaultState(){
-    return JSON.parse(JSON.stringify(INITIAL_USER_BACKUP));
+    return JSON.parse(JSON.stringify(DEFAULT_STARTER_DATA));
   }
 
   function loadState(){
@@ -3486,7 +3457,9 @@
 
   /* ================= Dashboard Rendering ================= */
   function renderDashboard(){
-    document.getElementById("greetingUser").textContent = `Welcome back, ${state.profile.name ? state.profile.name.split(' ')[0] : 'User'}! 👋`;
+    const pName = (state.profile.name || "").trim();
+    const isGeneric = !pName || pName.toLowerCase() === "my finances" || pName.toLowerCase() === "user";
+    document.getElementById("greetingUser").textContent = isGeneric ? "Welcome to ZHFinance! 👋" : `Welcome back, ${pName.split(' ')[0]}! 👋`;
     document.getElementById("monthLabel").textContent = monthLabelFromKey(currentMonth);
 
     const selectedAccountId = document.getElementById("dashboardAccountSelect").value || "all";
@@ -3570,9 +3543,8 @@
 
     grid.innerHTML = state.accounts.map((acc, idx) => {
       const bal = computeAccountBalance(acc.id);
-      const isSaikot = acc.name.toLowerCase().includes("saikot");
-      const isEity = acc.name.toLowerCase().includes("eity");
-      const cardThemeClass = isSaikot ? "card-saikot" : (isEity ? "card-eity" : "card-other");
+      const palette = ["theme-0", "theme-1", "theme-2", "theme-3", "theme-4"];
+      const cardThemeClass = palette[idx % palette.length];
 
       return `
         <div class="wallet-card card-3d ${cardThemeClass}" data-id="${acc.id}">
@@ -4508,13 +4480,27 @@
     e.target.value = "";
   });
 
-  /* Restore Preloaded Backup */
-  document.getElementById("restoreProvidedDataBtn").addEventListener("click", ()=>{
-    confirmDelete("Restore preloaded 2-3 months backup (79 transactions, Saikot Cash & Eity Cash)? Your current data will be updated to this snapshot.", ()=>{
-      state = JSON.parse(JSON.stringify(INITIAL_USER_BACKUP));
+  /* Load Demo Data (Sample Preview) */
+  document.getElementById("loadDemoDataBtn")?.addEventListener("click", ()=>{
+    confirmDelete("Load anonymous sample demo data (realistic dummy transactions, accounts & budget)? Your current browser data will be replaced by demo data for testing.", ()=>{
+      state = getDemoData();
       saveState();
+      currentMonth = todayISO().slice(0, 7);
+      goToView("dashboard");
       refreshCurrentView();
-      alert("Initial backup data successfully restored!");
+      alert("Sample demo data successfully loaded! You can now explore the charts, transactions, and reports.");
+    });
+  });
+
+  /* Reset to Clean Starter Data */
+  document.getElementById("resetStarterDataBtn")?.addEventListener("click", ()=>{
+    confirmDelete("Reset all accounts to ৳0 and clear all transactions and loans for a fresh start?", ()=>{
+      state = defaultState();
+      saveState();
+      currentMonth = todayISO().slice(0, 7);
+      goToView("dashboard");
+      refreshCurrentView();
+      alert("Reset to clean starter state complete!");
     });
   });
 
@@ -4522,17 +4508,8 @@
   document.getElementById("resetAllBtn").addEventListener("click", ()=>{
     confirmDelete("Every transaction, account and loan on this browser will be wiped. Profile will be kept. Proceed?", ()=>{
       const keptProfile = state.profile;
-      state = {
-        profile: keptProfile,
-        accounts: [{ id: uid(), name: "Cash", initial: 0 }],
-        categories: [
-          { id: uid(), name: "Salary", type: "income" },
-          { id: uid(), name: "Food", type: "expense", budget: 5000 },
-          { id: uid(), name: "Transport", type: "expense", budget: 2000 }
-        ],
-        transactions: [],
-        loans: []
-      };
+      state = defaultState();
+      state.profile = keptProfile;
       saveState();
       goToView("dashboard");
       updateSidebarProfile();
@@ -4540,9 +4517,9 @@
   });
 
   function updateSidebarProfile(){
-    document.getElementById("sidebarName").textContent = state.profile.name || "MD. Ziaul Hasan";
+    document.getElementById("sidebarName").textContent = state.profile.name || "My Finances";
     const av = document.getElementById("sidebarAvatar");
-    av.innerHTML = state.profile.image ? `<img src="${state.profile.image}" alt="" />` : initials(state.profile.name);
+    av.innerHTML = state.profile.image ? `<img src="${state.profile.image}" alt="" />` : initials(state.profile.name || "ZH");
   }
 
   function refreshCurrentView(){

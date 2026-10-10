@@ -1,1 +1,12 @@
-(index.html is a source file, no build artifacts, dependencies, or temp files in the changes)
+# Personal backup files & exports
+*backup*.json
+*personal*.json
+my-data.json
+user_original_data_backup.json
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
