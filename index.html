@@ -4399,7 +4399,7 @@
   function renderDashboard(){
     const pName = (state.profile.name || "").trim();
     const isGeneric = !pName || pName.toLowerCase() === "my finances" || pName.toLowerCase() === "user";
-    document.getElementById("greetingUser").textContent = isGeneric ? "Welcome to ZHFinance! 👋" : `Welcome back, ${pName.split(' ')[0]}! 👋`;
+    document.getElementById("greetingUser").textContent = isGeneric ? "Welcome to ZHFinance! 👋" : `Welcome back, ${pName}! 👋`;
     document.getElementById("monthLabel").textContent = monthLabelFromKey(currentMonth);
     const mobileMonthLabel = document.getElementById("mobileMonthLabel");
     if(mobileMonthLabel) mobileMonthLabel.textContent = monthLabelFromKey(currentMonth);
