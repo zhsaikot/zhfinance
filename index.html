@@ -2710,6 +2710,13 @@
             <option value="all">All Categories</option>
           </select>
           <input type="month" class="field-input" id="txFilterMonth" />
+          <select class="field-select" id="txSortBy" title="Sort Order">
+            <option value="date-desc">Newest First</option>
+            <option value="created-desc">Recently Added</option>
+            <option value="date-asc">Oldest First</option>
+            <option value="amount-desc">Amount: High to Low</option>
+            <option value="amount-asc">Amount: Low to High</option>
+          </select>
           <div class="spacer"></div>
           <button class="btn btn-sm" id="exportCsvBtn" title="Export as Excel / CSV file">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2947,6 +2954,58 @@
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
   function todayISO(){ return new Date().toISOString().slice(0,10); }
 
+  function extractTimestampFromId(id){
+    if(!id || typeof id !== 'string') return 0;
+    try {
+      const part = id.split(/[_-]/)[0].slice(0, 8);
+      const parsed = parseInt(part, 36);
+      if(parsed > 1500000000000 && parsed < 2500000000000) return parsed;
+    } catch(e){}
+    return 0;
+  }
+
+  function getTxTimestamp(t){
+    if(!t) return 0;
+    if(typeof t.createdAt === 'number' && t.createdAt > 0) return t.createdAt;
+    const extracted = extractTimestampFromId(t.id);
+    if(extracted > 0) return extracted;
+    return 0;
+  }
+
+  function sortTransactions(txArray, mode = 'date-desc'){
+    return [...txArray].sort((a, b) => {
+      if(mode === 'created-desc'){
+        const timeDiff = getTxTimestamp(b) - getTxTimestamp(a);
+        if(timeDiff !== 0) return timeDiff;
+        return (b.id || "").localeCompare(a.id || "");
+      }
+      if(mode === 'date-asc'){
+        const dateDiff = (a.date || "").localeCompare(b.date || "");
+        if(dateDiff !== 0) return dateDiff;
+        return getTxTimestamp(a) - getTxTimestamp(b);
+      }
+      if(mode === 'amount-desc'){
+        const amtDiff = Number(b.amount || 0) - Number(a.amount || 0);
+        if(amtDiff !== 0) return amtDiff;
+        return (b.date || "").localeCompare(a.date || "");
+      }
+      if(mode === 'amount-asc'){
+        const amtDiff = Number(a.amount || 0) - Number(b.amount || 0);
+        if(amtDiff !== 0) return amtDiff;
+        return (b.date || "").localeCompare(a.date || "");
+      }
+
+      // Default: 'date-desc' (Latest date first; if same date, latest created entry shows on TOP!)
+      const dateDiff = (b.date || "").localeCompare(a.date || "");
+      if(dateDiff !== 0) return dateDiff;
+
+      const timeDiff = getTxTimestamp(b) - getTxTimestamp(a);
+      if(timeDiff !== 0) return timeDiff;
+
+      return (b.id || "").localeCompare(a.id || "");
+    });
+  }
+
   /* Clean Anonymous Default Starter Data for New Users */
   const DEFAULT_STARTER_DATA = {
     "profile": { "name": "My Finances", "image": "" },
@@ -3051,7 +3110,16 @@
       const parsed = JSON.parse(raw);
       if(!parsed.accounts || !parsed.categories) return defaultState();
       if(!parsed.loans) parsed.loans = [];
-      if(!parsed.transactions) parsed.transactions = [];
+      if(!parsed.transactions) {
+        parsed.transactions = [];
+      } else {
+        const now = Date.now();
+        parsed.transactions.forEach((t, i) => {
+          if(!t.createdAt){
+            t.createdAt = extractTimestampFromId(t.id) || (now - (parsed.transactions.length - i) * 1000);
+          }
+        });
+      }
       return parsed;
     }catch(e){
       console.error("Failed to load saved data, fallback to backup.", e);
@@ -3596,10 +3664,10 @@
           return;
         }
         if(isEdit){
-          Object.assign(existing, { type: 'transfer', amount, fromAccountId, toAccountId, accountId: fromAccountId, date, note });
+          Object.assign(existing, { type: 'transfer', amount, fromAccountId, toAccountId, accountId: fromAccountId, date, note, updatedAt: Date.now() });
           delete existing.categoryId;
         } else {
-          state.transactions.push({ id: uid(), type: 'transfer', amount, fromAccountId, toAccountId, accountId: fromAccountId, date, note });
+          state.transactions.unshift({ id: uid(), type: 'transfer', amount, fromAccountId, toAccountId, accountId: fromAccountId, date, note, createdAt: Date.now() });
         }
       } else {
         const categoryId = modalEl.querySelector("#txCategory").value;
@@ -3608,11 +3676,11 @@
         if(!accountId){ alert("Please add an account first."); return; }
 
         if(isEdit){
-          Object.assign(existing, { type, amount, categoryId, accountId, date, note });
+          Object.assign(existing, { type, amount, categoryId, accountId, date, note, updatedAt: Date.now() });
           delete existing.fromAccountId;
           delete existing.toAccountId;
         } else {
-          state.transactions.push({ id: uid(), type, amount, categoryId, accountId, date, note });
+          state.transactions.unshift({ id: uid(), type, amount, categoryId, accountId, date, note, createdAt: Date.now() });
         }
       }
 
@@ -3867,9 +3935,9 @@
       if(!person || !amount || amount <= 0) return;
 
       if(isEdit){
-        Object.assign(existing, { type, person, amount, date, note, linkedToBalance, accountId });
+        Object.assign(existing, { type, person, amount, date, note, linkedToBalance, accountId, updatedAt: Date.now() });
       } else {
-        state.loans.push({
+        state.loans.unshift({
           id: uid(),
           type,
           person,
@@ -3879,7 +3947,8 @@
           paid: false,
           paidAmount: 0,
           linkedToBalance,
-          accountId
+          accountId,
+          createdAt: Date.now()
         });
       }
 
@@ -4398,7 +4467,7 @@
     renderBudgetPlanner();
     renderQuickTransferTargets();
 
-    let recent = [...state.transactions].sort((a,b) => (b.date || "").localeCompare(a.date) || 0);
+    let recent = sortTransactions(state.transactions, 'date-desc');
     if(selectedAccountId !== "all"){
       recent = recent.filter(t => t.accountId === selectedAccountId || t.fromAccountId === selectedAccountId || t.toAccountId === selectedAccountId);
     }
@@ -4623,8 +4692,8 @@
       `;
     }).join("");
 
-    // Transactions list
-    const txTableRows = txs.map(t => {
+    // Transactions list (sorted newest first)
+    const txTableRows = sortTransactions(txs, 'date-desc').map(t => {
       const isTr = t.type === 'transfer';
       const cat = findCategory(t.categoryId);
       const acc = findAccount(t.accountId);
@@ -4874,8 +4943,9 @@
     const accF = document.getElementById("txFilterAccount").value;
     const catF = document.getElementById("txFilterCategory").value;
     const monthF = document.getElementById("txFilterMonth").value;
+    const sortF = document.getElementById("txSortBy")?.value || 'date-desc';
 
-    let list = [...state.transactions].sort((a,b) => (b.date || "").localeCompare(a.date));
+    let list = sortTransactions(state.transactions, sortF);
 
     if(typeF !== 'all') list = list.filter(t => t.type === typeF);
     if(accF !== 'all'){
@@ -4912,8 +4982,9 @@
   }
 
   document.getElementById("txSearchInput").addEventListener("input", renderTransactions);
-  ["txFilterType", "txFilterAccount", "txFilterCategory", "txFilterMonth"].forEach(id => {
-    document.getElementById(id).addEventListener("change", renderTransactions);
+  ["txFilterType", "txFilterAccount", "txFilterCategory", "txFilterMonth", "txSortBy"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("change", renderTransactions);
   });
   document.getElementById("txClearFilters").addEventListener("click", ()=>{
     document.getElementById("txSearchInput").value = "";
@@ -4921,6 +4992,8 @@
     document.getElementById("txFilterAccount").value = "all";
     document.getElementById("txFilterCategory").value = "all";
     document.getElementById("txFilterMonth").value = "";
+    const sortEl = document.getElementById("txSortBy");
+    if(sortEl) sortEl.value = "date-desc";
     renderTransactions();
   });
 
@@ -5098,7 +5171,11 @@
     netEl.className = "stat-value masked-sensitive " + (netLoan >= 0 ? "income" : "expense");
 
     const list = document.getElementById("loanList");
-    const sorted = [...state.loans].sort((a,b) => (b.date || "").localeCompare(a.date));
+    const sorted = [...state.loans].sort((a,b) => {
+      const dDiff = (b.date || "").localeCompare(a.date || "");
+      if(dDiff !== 0) return dDiff;
+      return getTxTimestamp(b) - getTxTimestamp(a);
+    });
     list.innerHTML = sorted.length ? sorted.map(loanRowHtml).join("") : `<div class="empty">No loan records yet.</div>`;
 
     list.querySelectorAll(".repay-loan-btn").forEach(btn => {
@@ -5159,7 +5236,7 @@
     container.innerHTML = sortedKeys.map(k => {
       const { txs, income, expense, transferCount } = computeMonthTotals(k);
       const net = income - expense;
-      const sortedTx = [...txs].sort((a,b) => (b.date || "").localeCompare(a.date));
+      const sortedTx = sortTransactions(txs, 'date-desc');
 
       return `
         <div class="month-group" data-key="${k}">
