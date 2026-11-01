@@ -634,6 +634,74 @@
     text-align: center;
   }
 
+  /* Topbar Dashboard Filter Controls (Month + Account) */
+  .topbar-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .topbar-account-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-full);
+    padding: 4px 12px 4px 14px;
+    height: 42px;
+    box-sizing: border-box;
+    box-shadow: var(--shadow-1);
+    position: relative;
+    transition: var(--transition-fast);
+  }
+  .topbar-account-filter:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .topbar-filter-icon {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .topbar-account-select {
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    padding-right: 22px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-account-select option {
+    background: var(--bg-card);
+    color: var(--text);
+    padding: 8px 12px;
+  }
+  .topbar-filter-chevron {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+    color: var(--text-dim);
+    transition: transform var(--transition-fast);
+  }
+  .topbar-account-filter:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .topbar-account-filter:focus-within .topbar-filter-chevron {
+    color: var(--accent);
+    transform: rotate(180deg);
+  }
+
   .topbar-actions {
     display: flex;
     align-items: center;
@@ -1576,6 +1644,51 @@
     flex: 1;
   }
 
+  /* Mobile Account Selector Bar (in greeting banner) */
+  .mobile-account-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-full);
+    padding: 8px 14px;
+    box-shadow: var(--shadow-1);
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+  }
+  .mobile-account-bar svg:first-child {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .mobile-account-select {
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    width: 100%;
+    padding-right: 22px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  .mobile-account-select option {
+    background: var(--bg-card);
+    color: var(--text);
+    padding: 6px 10px;
+  }
+  .mobile-select-chevron {
+    position: absolute;
+    right: 14px;
+    pointer-events: none;
+    color: var(--text-dim);
+  }
+
   /* Responsive Tables and KPI Grids for Modals */
   .table-responsive {
     width: 100%;
@@ -1655,6 +1768,37 @@
     .grid-2 { grid-template-columns: 1fr; }
   }
 
+  @media (max-width: 1200px) and (min-width: 901px) {
+    .topbar {
+      gap: 8px;
+      padding: 0 16px;
+    }
+    #viewTitle {
+      font-size: 18px;
+    }
+    .month-label {
+      min-width: 100px;
+      font-size: 12.5px;
+    }
+    .topbar-account-filter {
+      max-width: 170px;
+      padding: 4px 8px 4px 10px;
+    }
+    .topbar-account-select {
+      max-width: 110px;
+      font-size: 12.5px;
+    }
+    .topbar-actions {
+      gap: 6px;
+    }
+    .topbar-actions .btn-label-desktop {
+      display: none !important;
+    }
+    .topbar-actions .btn {
+      padding: 0 10px;
+    }
+  }
+
   /* Unified Mobile & Tablet Experience (<= 900px) */
   @media (max-width: 900px) {
     /* Full defense against any horizontal blowout */
@@ -1701,9 +1845,13 @@
       flex: 1;
       min-width: 0;
     }
-    /* Strictly hide topbar month nav on mobile (prevents duplicates & crowding) */
+    /* Strictly hide topbar filters on mobile (prevents duplicates & crowding) */
+    .topbar-filters,
+    #topbarFilters,
     .topbar .month-nav,
-    #dashboardMonthNav {
+    #dashboardMonthNav,
+    .topbar-account-filter,
+    #topbarAccountFilter {
       display: none !important;
     }
     .topbar-actions {
@@ -1753,6 +1901,7 @@
     .greeting-title { font-size: 20px; }
     .greeting-sub { font-size: 13px; }
     .mobile-month-bar { display: flex; }
+    .mobile-account-bar { display: flex; }
     .quick-action-pills {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -2288,15 +2437,27 @@
       </button>
       <h1 id="viewTitle">Dashboard</h1>
 
-      <!-- Month Selector (Dashboard only) -->
-      <div class="month-nav" id="dashboardMonthNav">
-        <button id="prevMonthBtn" aria-label="Previous month">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <span class="month-label" id="monthLabel">October 2026</span>
-        <button id="nextMonthBtn" aria-label="Next month">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
+      <!-- Dashboard Filters (Month + Account) -->
+      <div class="topbar-filters" id="topbarFilters">
+        <!-- Month Selector (Dashboard only) -->
+        <div class="month-nav" id="dashboardMonthNav">
+          <button id="prevMonthBtn" aria-label="Previous month">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span class="month-label" id="monthLabel">October 2026</span>
+          <button id="nextMonthBtn" aria-label="Next month">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+
+        <!-- Account Selector Filter -->
+        <div class="topbar-account-filter" id="topbarAccountFilter" title="Filter Dashboard by Account">
+          <svg class="topbar-filter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19"/><circle cx="7" cy="15" r="1"/></svg>
+          <select class="topbar-account-select" id="dashboardAccountSelect" aria-label="Filter Dashboard by Account">
+            <option value="all">All Accounts Overview</option>
+          </select>
+          <svg class="topbar-filter-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
       </div>
 
       <div class="topbar-actions">
@@ -2352,6 +2513,14 @@
             <button id="mobileNextMonthBtn" aria-label="Next month">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </button>
+          </div>
+          <!-- Mobile Account Bar (Visible on mobile/tablet) -->
+          <div class="mobile-account-bar" id="mobileAccountBar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19"/><circle cx="7" cy="15" r="1"/></svg>
+            <select class="mobile-account-select" id="mobileAccountSelect" aria-label="Filter Dashboard by Account">
+              <option value="all">All Accounts Overview</option>
+            </select>
+            <svg class="mobile-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
           </div>
           <div class="quick-action-pills">
             <button class="btn btn-sm" id="dashAddIncomeBtn">+ Income</button>
@@ -2448,14 +2617,6 @@
             <button class="btn btn-sm btn-ghost" data-view-link="accounts">Manage Accounts →</button>
           </div>
           <div class="wallet-grid" id="walletCardsGrid"></div>
-        </div>
-
-        <!-- Dashboard Account Selector Filter -->
-        <div class="section-heading" style="margin-top:10px;">
-          <h3>Dashboard Account View</h3>
-          <select class="field-select" id="dashboardAccountSelect">
-            <option value="all">All Accounts Overview</option>
-          </select>
         </div>
 
         <!-- Main 2-Column Section -->
@@ -3076,8 +3237,12 @@
     navItems.forEach(n => n.classList.toggle("active", n.dataset.view === name));
     if(window.innerWidth > 900){
       dashboardMonthNav.style.display = name === "dashboard" ? "flex" : "none";
+      const topbarFilters = document.getElementById("topbarFilters");
+      if(topbarFilters) topbarFilters.style.display = name === "dashboard" ? "flex" : "none";
     } else {
       dashboardMonthNav.style.display = "none";
+      const topbarFilters = document.getElementById("topbarFilters");
+      if(topbarFilters) topbarFilters.style.display = "none";
     }
     closeSidebarMobile();
 
@@ -3219,7 +3384,22 @@
     renderDashboard();
   });
 
-  document.getElementById("dashboardAccountSelect").addEventListener("change", renderDashboard);
+  const desktopAccSelect = document.getElementById("dashboardAccountSelect");
+  if(desktopAccSelect){
+    desktopAccSelect.addEventListener("change", (e)=>{
+      const mob = document.getElementById("mobileAccountSelect");
+      if(mob) mob.value = e.target.value;
+      renderDashboard();
+    });
+  }
+  const mobileAccSelect = document.getElementById("mobileAccountSelect");
+  if(mobileAccSelect){
+    mobileAccSelect.addEventListener("change", (e)=>{
+      const dsk = document.getElementById("dashboardAccountSelect");
+      if(dsk) dsk.value = e.target.value;
+      renderDashboard();
+    });
+  }
 
   /* ================= Professional Stable Card Hover ================= */
   function bind3DTilt(){
@@ -4155,10 +4335,19 @@
     const mobileMonthLabel = document.getElementById("mobileMonthLabel");
     if(mobileMonthLabel) mobileMonthLabel.textContent = monthLabelFromKey(currentMonth);
 
-    const selectedAccountId = document.getElementById("dashboardAccountSelect").value || "all";
-    const accountSelect = document.getElementById("dashboardAccountSelect");
-    accountSelect.innerHTML = '<option value="all">All Accounts Overview</option>' + 
+    const desktopAccEl = document.getElementById("dashboardAccountSelect");
+    const mobileAccEl = document.getElementById("mobileAccountSelect");
+    const selectedAccountId = (desktopAccEl ? desktopAccEl.value : null) || (mobileAccEl ? mobileAccEl.value : null) || "all";
+    const optionsHtml = '<option value="all">All Accounts Overview</option>' + 
       state.accounts.map(a => `<option value="${a.id}" ${a.id===selectedAccountId?"selected":""}>${escapeHtml(a.name)}</option>`).join("");
+    if(desktopAccEl){
+      desktopAccEl.innerHTML = optionsHtml;
+      desktopAccEl.value = selectedAccountId;
+    }
+    if(mobileAccEl){
+      mobileAccEl.innerHTML = optionsHtml;
+      mobileAccEl.value = selectedAccountId;
+    }
 
     let totalBalance = 0;
     if(selectedAccountId === "all"){
@@ -4275,7 +4464,11 @@
 
     grid.querySelectorAll(".wallet-card").forEach(c => {
       c.addEventListener("click", ()=>{
-        document.getElementById("dashboardAccountSelect").value = c.dataset.id;
+        const accId = c.dataset.id;
+        const dsk = document.getElementById("dashboardAccountSelect");
+        if(dsk) dsk.value = accId;
+        const mob = document.getElementById("mobileAccountSelect");
+        if(mob) mob.value = accId;
         renderDashboard();
       });
     });
@@ -5260,11 +5453,15 @@
   }
 
   window.addEventListener("resize", ()=>{
+    const topbarFilters = document.getElementById("topbarFilters");
     if(window.innerWidth <= 900){
       dashboardMonthNav.style.display = "none";
+      if(topbarFilters) topbarFilters.style.display = "none";
     } else {
       const active = document.querySelector(".view.active");
-      if(active && active.id === "view-dashboard") dashboardMonthNav.style.display = "flex";
+      const isDash = active && active.id === "view-dashboard";
+      dashboardMonthNav.style.display = isDash ? "flex" : "none";
+      if(topbarFilters) topbarFilters.style.display = isDash ? "flex" : "none";
     }
     const active = document.querySelector(".view.active");
     if(active && active.id === "view-dashboard") renderDashboard();
@@ -5273,10 +5470,13 @@
   /* ================= Initialization ================= */
   updateSidebarProfile();
   renderDashboard();
+  const topbarFilters = document.getElementById("topbarFilters");
   if(window.innerWidth > 900){
     dashboardMonthNav.style.display = "flex";
+    if(topbarFilters) topbarFilters.style.display = "flex";
   } else {
     dashboardMonthNav.style.display = "none";
+    if(topbarFilters) topbarFilters.style.display = "none";
   }
   setTimeout(bind3DTilt, 100);
 
